@@ -1,6 +1,6 @@
 import { NavLink, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { LayoutGrid, Users } from "lucide-react";
+import { LayoutGrid, Users, Briefcase } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 
 export function AppTopNav() {
@@ -10,6 +10,7 @@ export function AppTopNav() {
 
   const items = [
     { to: "/dashboard", label: t("nav.dashboard", "Dashboard"), icon: LayoutGrid, end: true },
+    { to: "/positions", label: t("nav.positions", "Positions"), icon: Briefcase, end: true },
     ...(isSuperAdmin
       ? [{ to: "/users", label: t("nav.users", "HR Accounts"), icon: Users, end: true as const }]
       : []),

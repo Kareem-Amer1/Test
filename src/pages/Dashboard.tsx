@@ -35,8 +35,8 @@ export default function Dashboard() {
 
       <div className="rounded-lg border border-dashed border-app-border-strong bg-muted/30 p-6 text-sm text-muted-foreground">
         {t(
-          "dashboard.phase1Note",
-          "Phase 1 is complete — authentication and role-based access are active. Position, template, and exam features arrive in the next phases.",
+          "dashboard.phase2Note",
+          "Use Positions in the sidebar to manage exam templates for each job role.",
         )}
       </div>
     </div>

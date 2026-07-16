@@ -148,10 +148,10 @@ using (var scope = app.Services.CreateScope())
     }
 
     var seed = scope.ServiceProvider.GetRequiredService<ISeedService>();
-    try { await seed.SeedSuperAdminIfNeededAsync(); }
+    try { await seed.SeedAllAsync(); }
     catch (Exception ex)
     {
-        app.Logger.LogWarning(ex, "Super Admin seed failed (continuing).");
+        app.Logger.LogWarning(ex, "Database seed failed (continuing).");
     }
 }
 

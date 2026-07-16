@@ -25,8 +25,13 @@ public static class InfrastructureRegistration
 
         services.AddScoped<IUserRepository, UserRepository>();
         services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
+        services.AddScoped<IPositionRepository, PositionRepository>();
+        services.AddScoped<IExamTemplateRepository, ExamTemplateRepository>();
+        services.AddScoped<IExamRepository, ExamRepository>();
 
         services.AddScoped<IAuthService, AuthService>();
+        services.AddScoped<IPositionService, PositionService>();
+        services.AddScoped<ITemplateService, TemplateService>();
         services.AddScoped<ISeedService, SeedService>();
 
         services.AddAutoMapper(typeof(UserProfile));

@@ -67,13 +67,13 @@ public sealed class SeedController : ControllerBase
 
     public SeedController(ISeedService seed) => _seed = seed;
 
-    /// <summary>Idempotently seed the Super Admin account if none exists.</summary>
+    /// <summary>Idempotently seed Super Admin and default positions/templates.</summary>
     [AllowAnonymous]
     [HttpPost]
     [ProducesResponseType(typeof(ApiResponse<bool>), StatusCodes.Status200OK)]
     public async Task<IActionResult> Seed(CancellationToken ct)
     {
-        await _seed.SeedSuperAdminIfNeededAsync(ct);
+        await _seed.SeedAllAsync(ct);
         return Ok(ApiResponse<bool>.Ok(true));
     }
 }

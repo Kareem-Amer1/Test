@@ -10,6 +10,8 @@ import { AppShell } from "./layouts/AppShell";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import UsersAdmin from "./pages/UsersAdmin";
+import PositionsPage from "./features/positions/PositionsPage";
+import TemplateEditorPage from "./features/positions/TemplateEditorPage";
 import NotFound from "./pages/NotFound";
 import { POST_LOGIN_ROUTE } from "./config/appMode";
 import { USER_ROLES } from "@/lib/apiClient";
@@ -29,6 +31,8 @@ const App = () => (
             <Route element={<ProtectedRoute />}>
               <Route element={<AppShell />}>
                 <Route path="/dashboard" element={<Dashboard />} />
+                <Route path="/positions" element={<PositionsPage />} />
+                <Route path="/positions/:positionId/template" element={<TemplateEditorPage />} />
                 <Route element={<RoleRoute allowedRoles={[USER_ROLES.SuperAdmin]} />}>
                   <Route path="/users" element={<UsersAdmin />} />
                 </Route>
