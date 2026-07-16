@@ -6,7 +6,6 @@ import { api, setTokens } from "@/lib/apiClient";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { Logo } from "@/components/app/Logo";
 import { Eye, EyeOff } from "lucide-react";
@@ -26,7 +25,6 @@ export default function Auth() {
   const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [mode, setMode] = useState<"signin" | "signup">("signin");
 
   useEffect(() => {
     if (!loading && user) navigate(POST_LOGIN_ROUTE, { replace: true });
@@ -46,15 +44,10 @@ export default function Auth() {
     }
     setSubmitting(true);
     try {
-      const path = mode === "signup" ? "/auth/register" : "/auth/login";
-      const tokens = await api.post<AuthTokensResponse>(path, { email: em, password });
+      const tokens = await api.post<AuthTokensResponse>("/auth/login", { email: em, password });
       setTokens(tokens.accessToken, tokens.refreshToken);
       notifyAuthChanged();
-      toast.success(
-        mode === "signup"
-          ? t("auth.signupSuccess", "Account created.")
-          : t("auth.loginSuccess", "Signed in successfully."),
-      );
+      toast.success(t("auth.loginSuccess", "Signed in successfully."));
       navigate(POST_LOGIN_ROUTE, { replace: true });
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : String(err));
@@ -66,16 +59,14 @@ export default function Auth() {
   return (
     <div dir={dir} className="min-h-screen flex items-center justify-center bg-background p-4">
       <div className="w-full max-w-md space-y-6">
-        <div className="flex justify-center"><Logo /></div>
+        <div className="flex flex-col items-center gap-2">
+          <Logo />
+          <p className="text-sm text-muted-foreground text-center">
+            {t("auth.hireExamTagline", "Candidate exam system for HR interviews")}
+          </p>
+        </div>
         <div className="bg-card border border-app-border-strong rounded-xl p-6 shadow-sm">
-          <Tabs value={mode} onValueChange={(v) => setMode(v as "signin" | "signup")} className="mb-4">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="signin">{t("auth.loginButton", "Sign In")}</TabsTrigger>
-              <TabsTrigger value="signup">{t("auth.signupButton", "Sign Up")}</TabsTrigger>
-            </TabsList>
-            <TabsContent value="signin" />
-            <TabsContent value="signup" />
-          </Tabs>
+          <h1 className="text-lg font-semibold mb-4">{t("auth.loginTitle", "Sign in to HireExam")}</h1>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-1.5">
               <Label htmlFor="email">{t("auth.email", "Email")}</Label>
@@ -97,8 +88,8 @@ export default function Auth() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
-                  minLength={6}
-                  autoComplete={mode === "signup" ? "new-password" : "current-password"}
+                  minLength={8}
+                  autoComplete="current-password"
                   className="pe-10"
                 />
                 <button
@@ -112,9 +103,7 @@ export default function Auth() {
               </div>
             </div>
             <Button type="submit" disabled={submitting} className="w-full">
-              {submitting ? "…" : mode === "signup"
-                ? t("auth.signupButton", "Sign Up")
-                : t("auth.loginButton", "Sign In")}
+              {submitting ? "…" : t("auth.loginButton", "Sign In")}
             </Button>
           </form>
         </div>

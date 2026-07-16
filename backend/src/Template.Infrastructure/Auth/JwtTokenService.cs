@@ -4,10 +4,10 @@ using System.Security.Cryptography;
 using System.Text;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
-using VoiceFlowStudio.Application.Common;
-using VoiceFlowStudio.Core.Entities;
+using HireExam.Application.Common;
+using HireExam.Core.Entities;
 
-namespace VoiceFlowStudio.Infrastructure.Auth;
+namespace HireExam.Infrastructure.Auth;
 
 /// <summary>RS256-signed JWT issuer (Constitution IV).</summary>
 public sealed class JwtTokenService : ITokenService, IDisposable
@@ -30,13 +30,16 @@ public sealed class JwtTokenService : ITokenService, IDisposable
     {
         var now = DateTime.UtcNow;
         var expires = now.AddMinutes(_options.AccessTokenMinutes);
-        var claims = new[]
+        var claims = new List<Claim>
         {
-            new Claim(JwtRegisteredClaimNames.Sub, user.Id),
-            new Claim(JwtRegisteredClaimNames.Email, user.Email),
-            new Claim("role", user.Role),
-            new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString("N")),
+            new(JwtRegisteredClaimNames.Sub, user.Id),
+            new(JwtRegisteredClaimNames.Email, user.Email),
+            new("role", user.Role),
+            new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString("N")),
         };
+        if (!string.IsNullOrWhiteSpace(user.FullName))
+            claims.Add(new Claim("fullName", user.FullName));
+
         var token = new JwtSecurityToken(
             issuer: _options.Issuer,
             audience: _options.Audience,

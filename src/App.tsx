@@ -5,16 +5,14 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/hooks/useAuth";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
-import { ProjectProvider } from "@/contexts/ProjectContext";
-import { ProjectResolver } from "@/components/ProjectResolver";
+import { RoleRoute } from "@/components/RoleRoute";
 import { AppShell } from "./layouts/AppShell";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
-import Analytics from "./pages/Analytics";
-import Settings from "./pages/Settings";
-import Projects from "./pages/Projects";
+import UsersAdmin from "./pages/UsersAdmin";
 import NotFound from "./pages/NotFound";
-import { PROJECT_CONTROLLER_MODE, POST_LOGIN_ROUTE } from "./config/appMode";
+import { POST_LOGIN_ROUTE } from "./config/appMode";
+import { USER_ROLES } from "@/lib/apiClient";
 
 const queryClient = new QueryClient();
 
@@ -25,35 +23,19 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <AuthProvider>
-          <ProjectProvider>
-            <Routes>
-              <Route path="/" element={<Navigate to={POST_LOGIN_ROUTE} replace />} />
-              <Route path="/auth" element={<Auth />} />
-              <Route element={<ProtectedRoute />}>
-                {PROJECT_CONTROLLER_MODE && (
-                  <>
-                    <Route path="/projects" element={<Projects />} />
-                    <Route path="/project/:id" element={<ProjectResolver />}>
-                      <Route element={<AppShell />}>
-                        <Route index element={<Navigate to="dashboard" replace />} />
-                        <Route path="dashboard" element={<Dashboard />} />
-                        <Route path="analytics" element={<Analytics />} />
-                        <Route path="users" element={<Settings />} />
-                        <Route path="settings" element={<Settings />} />
-                      </Route>
-                    </Route>
-                  </>
-                )}
-                <Route element={<AppShell />}>
-                  <Route path="/dashboard" element={<Dashboard />} />
-                  <Route path="/analytics" element={<Analytics />} />
-                  <Route path="/users" element={<Settings />} />
-                  <Route path="/settings" element={<Settings />} />
+          <Routes>
+            <Route path="/" element={<Navigate to={POST_LOGIN_ROUTE} replace />} />
+            <Route path="/auth" element={<Auth />} />
+            <Route element={<ProtectedRoute />}>
+              <Route element={<AppShell />}>
+                <Route path="/dashboard" element={<Dashboard />} />
+                <Route element={<RoleRoute allowedRoles={[USER_ROLES.SuperAdmin]} />}>
+                  <Route path="/users" element={<UsersAdmin />} />
                 </Route>
               </Route>
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </ProjectProvider>
+            </Route>
+            <Route path="*" element={<NotFound />} />
+          </Routes>
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>

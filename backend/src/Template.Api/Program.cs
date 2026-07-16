@@ -9,12 +9,14 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Polly;
 using Polly.Extensions.Http;
-using VoiceFlowStudio.Api.Localization;
-using VoiceFlowStudio.Api.Middleware;
-using VoiceFlowStudio.Contracts.Common;
-using VoiceFlowStudio.Infrastructure;
-using VoiceFlowStudio.Infrastructure.Auth;
-using VoiceFlowStudio.Infrastructure.Persistence;
+using HireExam.Api.Localization;
+using HireExam.Api.Middleware;
+using HireExam.Contracts.Common;
+using HireExam.Core.Entities;
+using HireExam.Infrastructure;
+using HireExam.Infrastructure.Auth;
+using HireExam.Infrastructure.Persistence;
+using HireExam.Infrastructure.Seed;
 
 var builder = WebApplication.CreateBuilder(args);
 var config = builder.Configuration;
@@ -55,11 +57,14 @@ builder.Services
             IssuerSigningKey = signingKey,
             ValidAlgorithms = new[] { SecurityAlgorithms.RsaSha256 },
             NameClaimType = "sub",
+            RoleClaimType = "role",
         };
     });
 
 builder.Services.AddAuthorization(options =>
 {
+    options.AddPolicy("SuperAdminOnly", policy => policy.RequireRole(UserRoles.SuperAdmin));
+    options.AddPolicy("HrOrSuperAdmin", policy => policy.RequireRole(UserRoles.HR, UserRoles.SuperAdmin));
     // Constitution IV: default = authenticated. Public endpoints opt out with [AllowAnonymous].
     options.FallbackPolicy = new AuthorizationPolicyBuilder()
         .RequireAuthenticatedUser()
@@ -79,8 +84,8 @@ builder.Services
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
-    c.SwaggerDoc("v1", new OpenApiInfo { Title = "VoiceFlow Studio API", Version = "v1" });
-    var xml = Path.Combine(AppContext.BaseDirectory, "VoiceFlowStudio.Api.xml");
+    c.SwaggerDoc("v1", new OpenApiInfo { Title = "HireExam API", Version = "v1" });
+    var xml = Path.Combine(AppContext.BaseDirectory, "HireExam.Api.xml");
     if (File.Exists(xml)) c.IncludeXmlComments(xml);
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
@@ -141,6 +146,13 @@ using (var scope = app.Services.CreateScope())
     {
         app.Logger.LogWarning(ex, "Mongo index initialisation failed (continuing).");
     }
+
+    var seed = scope.ServiceProvider.GetRequiredService<ISeedService>();
+    try { await seed.SeedSuperAdminIfNeededAsync(); }
+    catch (Exception ex)
+    {
+        app.Logger.LogWarning(ex, "Super Admin seed failed (continuing).");
+    }
 }
 
 app.UseMiddleware<ErrorHandlingMiddleware>();
@@ -154,7 +166,7 @@ app.UseAuthorization();
 app.UseSwagger();
 app.UseSwaggerUI(c =>
 {
-    c.SwaggerEndpoint("/swagger/v1/swagger.json", "VoiceFlow Studio API v1");
+    c.SwaggerEndpoint("/swagger/v1/swagger.json", "HireExam API v1");
     c.RoutePrefix = "swagger";
 });
 

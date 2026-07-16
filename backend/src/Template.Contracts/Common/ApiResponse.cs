@@ -1,4 +1,4 @@
-namespace VoiceFlowStudio.Contracts.Common;
+namespace HireExam.Contracts.Common;
 
 /// <summary>
 /// Standard envelope returned by every endpoint (Constitution VII).

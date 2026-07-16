@@ -1,9 +1,9 @@
 using MongoDB.Driver;
-using VoiceFlowStudio.Core.Entities;
-using VoiceFlowStudio.Core.Interfaces;
-using VoiceFlowStudio.Infrastructure.Persistence;
+using HireExam.Core.Entities;
+using HireExam.Core.Interfaces;
+using HireExam.Infrastructure.Persistence;
 
-namespace VoiceFlowStudio.Infrastructure.Repositories;
+namespace HireExam.Infrastructure.Repositories;
 
 public sealed class UserRepository : IUserRepository
 {
@@ -23,21 +23,9 @@ public sealed class UserRepository : IUserRepository
     public Task InsertAsync(User user, CancellationToken ct = default) =>
         _col.InsertOneAsync(user, cancellationToken: ct);
 
-    public async Task<bool> AddProjectIdAsync(string userId, string projectId, CancellationToken ct = default)
+    public async Task<bool> ExistsWithRoleAsync(string role, CancellationToken ct = default)
     {
-        var update = Builders<User>.Update
-            .AddToSet(u => u.ProjectIds, projectId)
-            .Set(u => u.UpdatedAt, DateTime.UtcNow);
-        var r = await _col.UpdateOneAsync(u => u.Id == userId, update, cancellationToken: ct);
-        return r.MatchedCount > 0;
-    }
-
-    public async Task<bool> RemoveProjectIdAsync(string userId, string projectId, CancellationToken ct = default)
-    {
-        var update = Builders<User>.Update
-            .Pull(u => u.ProjectIds, projectId)
-            .Set(u => u.UpdatedAt, DateTime.UtcNow);
-        var r = await _col.UpdateOneAsync(u => u.Id == userId, update, cancellationToken: ct);
-        return r.MatchedCount > 0;
+        var count = await _col.CountDocumentsAsync(u => u.Role == role, cancellationToken: ct);
+        return count > 0;
     }
 }

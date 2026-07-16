@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
-namespace VoiceFlowStudio.Api.Controllers;
+namespace HireExam.Api.Controllers;
 
 [ApiController]
 public sealed class HealthController : ControllerBase

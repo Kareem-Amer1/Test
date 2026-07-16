@@ -1,7 +1,7 @@
 using System.Collections.Concurrent;
 using System.Text.Json;
 
-namespace VoiceFlowStudio.Api.Localization;
+namespace HireExam.Api.Localization;
 
 /// <summary>
 /// Constitution XI: localization files loaded and cached in memory at startup.

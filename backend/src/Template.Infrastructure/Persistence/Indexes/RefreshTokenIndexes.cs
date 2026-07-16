@@ -1,7 +1,7 @@
 using MongoDB.Driver;
-using VoiceFlowStudio.Core.Entities;
+using HireExam.Core.Entities;
 
-namespace VoiceFlowStudio.Infrastructure.Persistence.Indexes;
+namespace HireExam.Infrastructure.Persistence.Indexes;
 
 public static class RefreshTokenIndexes
 {

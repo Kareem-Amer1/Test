@@ -1,4 +1,4 @@
-namespace VoiceFlowStudio.Application.Common;
+namespace HireExam.Application.Common;
 
 /// <summary>Typed error codes (Constitution VI). Stringly-typed strings are forbidden.</summary>
 public enum ErrorCode

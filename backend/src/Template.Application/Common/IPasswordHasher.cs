@@ -1,4 +1,4 @@
-namespace VoiceFlowStudio.Application.Common;
+namespace HireExam.Application.Common;
 
 public interface IPasswordHasher
 {

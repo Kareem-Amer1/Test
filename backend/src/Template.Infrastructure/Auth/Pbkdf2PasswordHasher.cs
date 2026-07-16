@@ -1,7 +1,7 @@
 using System.Security.Cryptography;
-using VoiceFlowStudio.Application.Common;
+using HireExam.Application.Common;
 
-namespace VoiceFlowStudio.Infrastructure.Auth;
+namespace HireExam.Infrastructure.Auth;
 
 /// <summary>
 /// PBKDF2-SHA256 (200k iterations, 16-byte salt, 32-byte hash). Encoded as

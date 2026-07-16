@@ -1,7 +1,7 @@
 import { jwtDecode } from "jwt-decode";
 
-const ACCESS_KEY = "vf_access_token";
-const REFRESH_KEY = "vf_refresh_token";
+const ACCESS_KEY = "he_access_token";
+const REFRESH_KEY = "he_refresh_token";
 
 function apiOrigin(): string {
   const u = import.meta.env.VITE_API_URL as string | undefined;
@@ -12,10 +12,10 @@ export function getApiOrigin(): string {
   return apiOrigin();
 }
 
-export interface VoiceFlowJwtPayload {
+export interface HireExamJwtPayload {
   sub: string;
   email?: string;
-  tenant_id?: string;
+  fullName?: string;
   role?: string | string[];
 }
 
@@ -40,11 +40,11 @@ export function clearTokens(): void {
   localStorage.removeItem(REFRESH_KEY);
 }
 
-export function decodeToken(): VoiceFlowJwtPayload | null {
+export function decodeToken(): HireExamJwtPayload | null {
   const t = getAccessToken();
   if (!t) return null;
   try {
-    return jwtDecode<VoiceFlowJwtPayload>(t);
+    return jwtDecode<HireExamJwtPayload>(t);
   } catch {
     return null;
   }
@@ -153,7 +153,7 @@ async function runRequest<T>(method: string, url: string, body?: unknown, init?:
     const refreshed = await tryRefresh();
     if (refreshed) {
       headers.Authorization = `Bearer ${getAccessToken() ?? ""}`;
-      res = await fetch(url, { ...init, method, headers, body: reqBody });
+      res = await exec();
     }
   }
 
@@ -172,14 +172,6 @@ async function runRequest<T>(method: string, url: string, body?: unknown, init?:
 
 async function request<T>(method: string, path: string, body?: unknown, init?: RequestInit): Promise<T | undefined> {
   return runRequest<T>(method, joinUrl(path), body, init);
-}
-
-export async function ctiGet<T>(path: string, init?: RequestInit): Promise<T> {
-  const p = path.startsWith("/") ? path : `/${path}`;
-  const url = `${apiOrigin()}/api/cti${p}`;
-  const v = await runRequest<T>("GET", url, undefined, init);
-  if (v === undefined) throw new Error("Empty API response");
-  return v;
 }
 
 async function unwrap<T>(promise: Promise<T | undefined>): Promise<T> {
@@ -208,3 +200,10 @@ export const api = {
   deleteRaw: async (path: string, init?: RequestInit): Promise<void> => { await request("DELETE", path, undefined, init); },
   upload: <T>(path: string, form: FormData, init?: RequestInit) => unwrap(request<T>("POST", path, form, init)),
 };
+
+export const USER_ROLES = {
+  SuperAdmin: "SuperAdmin",
+  HR: "HR",
+} as const;
+
+export type UserRole = (typeof USER_ROLES)[keyof typeof USER_ROLES];

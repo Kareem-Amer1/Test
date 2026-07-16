@@ -1,6 +1,6 @@
-using VoiceFlowStudio.Core.Entities;
+using HireExam.Core.Entities;
 
-namespace VoiceFlowStudio.Application.Common;
+namespace HireExam.Application.Common;
 
 public sealed record IssuedAccessToken(string Token, DateTime ExpiresAt);
 public sealed record IssuedRefreshToken(string Token, string TokenHash, DateTime ExpiresAt);

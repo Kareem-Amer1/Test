@@ -1,19 +1,18 @@
 import { NavLink, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { BarChart3, LayoutGrid, Settings, Users } from "lucide-react";
-import { useProjects } from "@/contexts/ProjectContext";
+import { LayoutGrid, Users } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
 
 export function AppTopNav() {
   const { t } = useTranslation();
   const { pathname } = useLocation();
-  const { activeProject } = useProjects();
-  const base = activeProject ? `/project/${activeProject.id}` : "";
+  const { isSuperAdmin } = useAuth();
 
   const items = [
-    { to: `${base}/dashboard`, label: t("nav.dashboard", "Dashboard"), icon: LayoutGrid, end: true },
-    { to: `${base}/analytics`, label: t("nav.analytics", "Analytics"), icon: BarChart3 },
-    { to: `${base}/users`, label: t("nav.users", "Users"), icon: Users },
-    { to: `${base}/settings`, label: t("nav.settings", "Settings"), icon: Settings },
+    { to: "/dashboard", label: t("nav.dashboard", "Dashboard"), icon: LayoutGrid, end: true },
+    ...(isSuperAdmin
+      ? [{ to: "/users", label: t("nav.users", "HR Accounts"), icon: Users, end: true as const }]
+      : []),
   ];
 
   const isActive = (path: string, end?: boolean) =>

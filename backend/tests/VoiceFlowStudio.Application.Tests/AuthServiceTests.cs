@@ -1,12 +1,12 @@
 using Moq;
-using VoiceFlowStudio.Application.Common;
-using VoiceFlowStudio.Application.Services;
-using VoiceFlowStudio.Contracts.Auth;
-using VoiceFlowStudio.Core.Entities;
-using VoiceFlowStudio.Core.Interfaces;
+using HireExam.Application.Common;
+using HireExam.Application.Services;
+using HireExam.Contracts.Auth;
+using HireExam.Core.Entities;
+using HireExam.Core.Interfaces;
 using Xunit;
 
-namespace VoiceFlowStudio.Application.Tests;
+namespace HireExam.Application.Tests;
 
 public class AuthServiceTests
 {
@@ -27,32 +27,17 @@ public class AuthServiceTests
     }
 
     [Fact]
-    public async Task Register_NewEmail_Should_IssueTokens()
+    public async Task Login_InactiveUser_Should_ReturnUnauthorized()
     {
-        var (svc, users, refresh, hasher, _) = Build();
-        users.Setup(u => u.GetByEmailAsync("a@b.com", default)).ReturnsAsync((User?)null);
-        hasher.Setup(h => h.Hash("password123")).Returns("hashed");
-
-        var result = await svc.RegisterAsync(new RegisterRequest("a@b.com", "password123"));
-
-        Assert.True(result.IsSuccess);
-        Assert.Equal("access", result.Value!.AccessToken);
-        Assert.Equal("refresh", result.Value.RefreshToken);
-        users.Verify(u => u.InsertAsync(It.Is<User>(x => x.Email == "a@b.com" && x.PasswordHash == "hashed"), default), Times.Once);
-        refresh.Verify(r => r.InsertAsync(It.Is<RefreshToken>(rt => rt.TokenHash == "hash"), default), Times.Once);
-    }
-
-    [Fact]
-    public async Task Register_DuplicateEmail_Should_ReturnConflict()
-    {
-        var (svc, users, _, _, _) = Build();
+        var (svc, users, _, hasher, _) = Build();
         users.Setup(u => u.GetByEmailAsync("a@b.com", default))
-            .ReturnsAsync(new User { Id = "1", Email = "a@b.com" });
+            .ReturnsAsync(new User { Id = "1", Email = "a@b.com", PasswordHash = "h", IsActive = false });
+        hasher.Setup(h => h.Verify("ok-password", "h")).Returns(true);
 
-        var result = await svc.RegisterAsync(new RegisterRequest("a@b.com", "password123"));
+        var result = await svc.LoginAsync(new LoginRequest("a@b.com", "ok-password"));
 
         Assert.False(result.IsSuccess);
-        Assert.Equal(ErrorCode.Conflict, result.Error.Code);
+        Assert.Equal(ErrorCode.Unauthorized, result.Error.Code);
     }
 
     [Fact]
@@ -60,7 +45,7 @@ public class AuthServiceTests
     {
         var (svc, users, _, hasher, _) = Build();
         users.Setup(u => u.GetByEmailAsync("a@b.com", default))
-            .ReturnsAsync(new User { Id = "1", Email = "a@b.com", PasswordHash = "h" });
+            .ReturnsAsync(new User { Id = "1", Email = "a@b.com", PasswordHash = "h", IsActive = true });
         hasher.Setup(h => h.Verify("wrong", "h")).Returns(false);
 
         var result = await svc.LoginAsync(new LoginRequest("a@b.com", "wrong"));
@@ -74,13 +59,27 @@ public class AuthServiceTests
     {
         var (svc, users, _, hasher, _) = Build();
         users.Setup(u => u.GetByEmailAsync("a@b.com", default))
-            .ReturnsAsync(new User { Id = "1", Email = "a@b.com", PasswordHash = "h" });
+            .ReturnsAsync(new User { Id = "1", Email = "a@b.com", PasswordHash = "h", IsActive = true, Role = UserRoles.HR });
         hasher.Setup(h => h.Verify("ok-password", "h")).Returns(true);
 
         var result = await svc.LoginAsync(new LoginRequest("a@b.com", "ok-password"));
 
         Assert.True(result.IsSuccess);
         Assert.Equal("access", result.Value!.AccessToken);
+    }
+
+    [Fact]
+    public async Task GetMe_ValidUser_Should_ReturnProfile()
+    {
+        var (svc, users, _, _, _) = Build();
+        users.Setup(u => u.GetByIdAsync("1", default))
+            .ReturnsAsync(new User { Id = "1", Email = "a@b.com", FullName = "Admin", Role = UserRoles.SuperAdmin, IsActive = true });
+
+        var result = await svc.GetMeAsync("1");
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal("Admin", result.Value!.FullName);
+        Assert.Equal(UserRoles.SuperAdmin, result.Value.Role);
     }
 
     [Fact]
@@ -101,7 +100,8 @@ public class AuthServiceTests
         var (svc, users, refresh, _, _) = Build();
         var stored = new RefreshToken { Id = "rid", UserId = "1", TokenHash = "H(rt)", ExpiresAt = DateTime.UtcNow.AddDays(1) };
         refresh.Setup(r => r.GetByHashAsync("H(rt)", default)).ReturnsAsync(stored);
-        users.Setup(u => u.GetByIdAsync("1", default)).ReturnsAsync(new User { Id = "1", Email = "a@b.com" });
+        users.Setup(u => u.GetByIdAsync("1", default))
+            .ReturnsAsync(new User { Id = "1", Email = "a@b.com", IsActive = true });
 
         var result = await svc.RefreshAsync(new RefreshRequest("rt"));
 

@@ -1,8 +1,8 @@
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
-using VoiceFlowStudio.Core.Common;
+using HireExam.Core.Common;
 
-namespace VoiceFlowStudio.Core.Entities;
+namespace HireExam.Core.Entities;
 
 [BsonIgnoreExtraElements]
 public sealed class User : Entity
@@ -13,15 +13,16 @@ public sealed class User : Entity
     [BsonElement("passwordHash")]
     public string PasswordHash { get; set; } = string.Empty;
 
-    [BsonElement("role")]
-    public string Role { get; set; } = "user";
+    [BsonElement("fullName")]
+    public string FullName { get; set; } = string.Empty;
 
-    /// <summary>
-    /// Project ownership lives on the user as a list of project IDs. The
-    /// <see cref="Project"/> document intentionally does not carry a back-
-    /// reference to the user.
-    /// </summary>
-    [BsonElement("projectIds")]
+    [BsonElement("role")]
+    public string Role { get; set; } = UserRoles.HR;
+
+    [BsonElement("isActive")]
+    public bool IsActive { get; set; } = true;
+
+    [BsonElement("createdBy")]
     [BsonRepresentation(BsonType.ObjectId)]
-    public List<string> ProjectIds { get; set; } = new();
+    public string? CreatedBy { get; set; }
 }

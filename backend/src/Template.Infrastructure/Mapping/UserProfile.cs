@@ -1,13 +1,14 @@
 using AutoMapper;
-using VoiceFlowStudio.Contracts.Auth;
-using VoiceFlowStudio.Core.Entities;
+using HireExam.Contracts.Auth;
+using HireExam.Core.Entities;
 
-namespace VoiceFlowStudio.Infrastructure.Mapping;
+namespace HireExam.Infrastructure.Mapping;
 
 public sealed class UserProfile : Profile
 {
     public UserProfile()
     {
-        CreateMap<User, UserResponse>();
+        CreateMap<User, UserResponse>()
+            .ConstructUsing(u => new UserResponse(u.Id, u.Email, u.FullName, u.Role));
     }
 }

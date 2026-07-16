@@ -1,7 +1,7 @@
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 
-namespace VoiceFlowStudio.Core.Common;
+namespace HireExam.Core.Common;
 
 /// <summary>
 /// Base entity. All IDs are <see cref="string"/> exposed in C# but stored as

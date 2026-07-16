@@ -1,4 +1,4 @@
-namespace VoiceFlowStudio.Infrastructure.Persistence;
+namespace HireExam.Infrastructure.Persistence;
 
 /// <summary>
 /// Multi-database support (Constitution: "MongoClientFactory MUST support

@@ -1,9 +1,9 @@
 using Microsoft.AspNetCore.Mvc;
-using VoiceFlowStudio.Api.Localization;
-using VoiceFlowStudio.Application.Common;
-using VoiceFlowStudio.Contracts.Common;
+using HireExam.Api.Localization;
+using HireExam.Application.Common;
+using HireExam.Contracts.Common;
 
-namespace VoiceFlowStudio.Api.Middleware;
+namespace HireExam.Api.Middleware;
 
 /// <summary>
 /// Shared utility (Constitution VI) that maps <see cref="Result{T}"/> to

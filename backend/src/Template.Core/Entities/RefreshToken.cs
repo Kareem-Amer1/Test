@@ -1,8 +1,8 @@
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
-using VoiceFlowStudio.Core.Common;
+using HireExam.Core.Common;
 
-namespace VoiceFlowStudio.Core.Entities;
+namespace HireExam.Core.Entities;
 
 [BsonIgnoreExtraElements]
 public sealed class RefreshToken : Entity

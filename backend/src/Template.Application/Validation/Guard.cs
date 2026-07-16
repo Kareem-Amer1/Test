@@ -1,6 +1,6 @@
 using System.Text.RegularExpressions;
 
-namespace VoiceFlowStudio.Application.Validation;
+namespace HireExam.Application.Validation;
 
 /// <summary>Constitution IV: all input validated at the API boundary OR here before reaching infra.</summary>
 public static partial class Guard

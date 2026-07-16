@@ -1,7 +1,7 @@
 using Microsoft.Extensions.Options;
 using MongoDB.Driver;
 
-namespace VoiceFlowStudio.Infrastructure.Persistence;
+namespace HireExam.Infrastructure.Persistence;
 
 public sealed class MongoClientFactory : IMongoClientFactory
 {

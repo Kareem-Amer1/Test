@@ -1,9 +1,9 @@
 using MongoDB.Driver;
-using VoiceFlowStudio.Core.Entities;
-using VoiceFlowStudio.Core.Interfaces;
-using VoiceFlowStudio.Infrastructure.Persistence;
+using HireExam.Core.Entities;
+using HireExam.Core.Interfaces;
+using HireExam.Infrastructure.Persistence;
 
-namespace VoiceFlowStudio.Infrastructure.Repositories;
+namespace HireExam.Infrastructure.Repositories;
 
 public sealed class RefreshTokenRepository : IRefreshTokenRepository
 {

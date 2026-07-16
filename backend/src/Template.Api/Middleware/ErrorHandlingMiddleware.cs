@@ -1,8 +1,8 @@
 using System.Text.Json;
-using VoiceFlowStudio.Api.Localization;
-using VoiceFlowStudio.Contracts.Common;
+using HireExam.Api.Localization;
+using HireExam.Contracts.Common;
 
-namespace VoiceFlowStudio.Api.Middleware;
+namespace HireExam.Api.Middleware;
 
 public sealed class ErrorHandlingMiddleware
 {

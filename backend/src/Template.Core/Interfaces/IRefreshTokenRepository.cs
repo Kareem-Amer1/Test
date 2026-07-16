@@ -1,6 +1,6 @@
-using VoiceFlowStudio.Core.Entities;
+using HireExam.Core.Entities;
 
-namespace VoiceFlowStudio.Core.Interfaces;
+namespace HireExam.Core.Interfaces;
 
 public interface IRefreshTokenRepository
 {

@@ -2,17 +2,15 @@ import { useState } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import {
-  BarChart3,
   ChevronLeft,
   ChevronRight,
   LayoutGrid,
-  Settings,
   Users,
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Logo } from "./Logo";
-import { useProjects } from "@/contexts/ProjectContext";
+import { useAuth } from "@/hooks/useAuth";
 
 type Item = { to: string; label: string; icon: LucideIcon; end?: boolean; badge?: string };
 type Group = { label: string; items: Item[] };
@@ -21,21 +19,18 @@ export function FancySidebar() {
   const { t } = useTranslation();
   const { pathname } = useLocation();
   const [collapsed, setCollapsed] = useState(false);
-  const { activeProject } = useProjects();
-  const base = activeProject ? `/project/${activeProject.id}` : "";
+  const { isSuperAdmin } = useAuth();
 
   const workspace: Item[] = [
-    { to: `${base}/dashboard`, label: t("nav.dashboard", "Dashboard"), icon: LayoutGrid, end: true },
-    { to: `${base}/analytics`, label: t("nav.analytics", "Analytics"), icon: BarChart3 },
+    { to: "/dashboard", label: t("nav.dashboard", "Dashboard"), icon: LayoutGrid, end: true },
   ];
-  const manage: Item[] = [
-    { to: `${base}/users`, label: t("nav.users", "Users"), icon: Users },
-    { to: `${base}/settings`, label: t("nav.settings", "Settings"), icon: Settings },
-  ];
+  const manage: Item[] = isSuperAdmin
+    ? [{ to: "/users", label: t("nav.users", "HR Accounts"), icon: Users, end: true }]
+    : [];
 
   const groups: Group[] = [
     { label: t("fancy.sections.workspace", "Workspace"), items: workspace },
-    { label: t("fancy.sections.manage", "Manage"), items: manage },
+    ...(manage.length ? [{ label: t("fancy.sections.manage", "Manage"), items: manage }] : []),
   ];
 
   const isActive = (path: string, end?: boolean) =>
@@ -50,45 +45,34 @@ export function FancySidebar() {
       </div>
 
       <nav className="fancy-nav">
-        {groups.map((g) =>
-          g.items.length ? (
-            <div key={g.label} className="fancy-nav-group">
-              <div className="fancy-nav-label">{g.label}</div>
-              <ul>
-                {g.items.map((it) => {
-                  const active = isActive(it.to, it.end);
-                  return (
-                    <li key={it.to}>
-                      <NavLink
-                        to={it.to}
-                        end={it.end}
-                        className={cn("fancy-nav-item", active && "is-active")}
-                      >
-                        {active && <span className="fancy-nav-bar" aria-hidden />}
-                        <it.icon className="fancy-nav-icon" />
-                        <span className="fancy-nav-text">{it.label}</span>
-                        {it.badge && <span className="fancy-nav-badge">{it.badge}</span>}
-                      </NavLink>
-                    </li>
-                  );
-                })}
-              </ul>
-            </div>
-          ) : null
-        )}
+        {groups.map((group) => (
+          <div key={group.label} className="fancy-nav-group">
+            {!collapsed && <div className="fancy-nav-label">{group.label}</div>}
+            {group.items.map((item) => {
+              const active = isActive(item.to, item.end);
+              return (
+                <NavLink
+                  key={item.to}
+                  to={item.to}
+                  end={item.end}
+                  className={cn("fancy-nav-item", active && "fancy-nav-item--active")}
+                  title={collapsed ? item.label : undefined}
+                >
+                  <item.icon className="h-4 w-4 shrink-0" />
+                  {!collapsed && <span>{item.label}</span>}
+                  {!collapsed && item.badge && (
+                    <span className="ms-auto text-[10px] font-medium opacity-70">{item.badge}</span>
+                  )}
+                </NavLink>
+              );
+            })}
+          </div>
+        ))}
       </nav>
 
-      <div className="fancy-sidebar-footer">
-        <button
-          type="button"
-          onClick={toggle}
-          className="fancy-toggle-btn"
-          aria-label={collapsed ? t("sidebar.expand", "Expand") : t("sidebar.collapse", "Collapse")}
-        >
-          {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
-          <span className="fancy-toggle-label">{collapsed ? t("sidebar.expand", "Expand") : t("sidebar.collapse", "Collapse")}</span>
-        </button>
-      </div>
+      <button type="button" className="fancy-collapse-btn" onClick={toggle} aria-label="Toggle sidebar">
+        {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+      </button>
     </aside>
   );
 }

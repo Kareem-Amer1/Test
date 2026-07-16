@@ -1,14 +1,15 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using VoiceFlowStudio.Application.Common;
-using VoiceFlowStudio.Application.Services;
-using VoiceFlowStudio.Core.Interfaces;
-using VoiceFlowStudio.Infrastructure.Auth;
-using VoiceFlowStudio.Infrastructure.Mapping;
-using VoiceFlowStudio.Infrastructure.Persistence;
-using VoiceFlowStudio.Infrastructure.Repositories;
+using HireExam.Application.Common;
+using HireExam.Application.Services;
+using HireExam.Core.Interfaces;
+using HireExam.Infrastructure.Auth;
+using HireExam.Infrastructure.Mapping;
+using HireExam.Infrastructure.Persistence;
+using HireExam.Infrastructure.Repositories;
+using HireExam.Infrastructure.Seed;
 
-namespace VoiceFlowStudio.Infrastructure;
+namespace HireExam.Infrastructure;
 
 public static class InfrastructureRegistration
 {
@@ -16,22 +17,19 @@ public static class InfrastructureRegistration
     {
         services.Configure<MongoOptions>(config.GetSection(MongoOptions.Section));
         services.Configure<JwtOptions>(config.GetSection(JwtOptions.Section));
-
-        // Entity BSON mapping is declared via attributes on the entities; no
-        // BsonClassMap registration is required here.
+        services.Configure<SeedOptions>(config.GetSection(SeedOptions.Section));
 
         services.AddSingleton<IMongoClientFactory, MongoClientFactory>();
         services.AddSingleton<IPasswordHasher, Pbkdf2PasswordHasher>();
         services.AddSingleton<ITokenService, JwtTokenService>();
 
         services.AddScoped<IUserRepository, UserRepository>();
-        services.AddScoped<IProjectRepository, ProjectRepository>();
         services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
 
         services.AddScoped<IAuthService, AuthService>();
-        services.AddScoped<IProjectService, ProjectService>();
+        services.AddScoped<ISeedService, SeedService>();
 
-        services.AddAutoMapper(typeof(ProjectProfile), typeof(UserProfile));
+        services.AddAutoMapper(typeof(UserProfile));
         return services;
     }
 }
