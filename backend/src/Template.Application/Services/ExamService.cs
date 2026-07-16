@@ -7,11 +7,14 @@ namespace HireExam.Application.Services;
 
 public interface IExamService
 {
-    Task<Result<IReadOnlyList<ExamListItemDto>>> ListAsync(string userId, string role, CancellationToken ct = default);
+    Task<Result<IReadOnlyList<ExamListItemDto>>> ListAsync(
+        string userId, string role, ExamListQueryDto? query, CancellationToken ct = default);
     Task<Result<CreateExamResponse>> CreateAsync(string userId, CreateExamRequest request, CancellationToken ct = default);
     Task<Result<ExamSessionResponse>> GetSessionAsync(string examId, string userId, string role, CancellationToken ct = default);
+    Task<Result<ExamDetailResponse>> GetDetailAsync(string examId, string userId, string role, CancellationToken ct = default);
     Task<Result<ExamSessionResponse>> SaveAnswersAsync(string examId, string userId, string role, SaveAnswersRequest request, CancellationToken ct = default);
     Task<Result<SubmitExamResponse>> SubmitAsync(string examId, string userId, string role, SubmitExamRequest? request, CancellationToken ct = default);
+    Task<Result<GradeExamResponse>> GradeAsync(string examId, string userId, string role, GradeExamRequest request, CancellationToken ct = default);
 }
 
 public sealed class ExamService : IExamService
@@ -33,23 +36,20 @@ public sealed class ExamService : IExamService
         _users = users;
     }
 
-    public async Task<Result<IReadOnlyList<ExamListItemDto>>> ListAsync(string userId, string role, CancellationToken ct = default)
+    public async Task<Result<IReadOnlyList<ExamListItemDto>>> ListAsync(
+        string userId, string role, ExamListQueryDto? query, CancellationToken ct = default)
     {
-        var exams = role == UserRoles.SuperAdmin
-            ? await _exams.ListAllAsync(ct)
-            : await _exams.ListByConductedByAsync(userId, ct);
+        var filter = new ExamListFilter
+        {
+            ConductedBy = role == UserRoles.SuperAdmin ? null : userId,
+            PositionId = query?.PositionId,
+            Status = query?.Status,
+            From = query?.From,
+            To = query?.To,
+        };
 
-        var items = exams.Select(e => new ExamListItemDto(
-            e.Id,
-            e.CandidateName,
-            e.PositionName,
-            e.Status,
-            e.StartedAt,
-            e.SubmittedAt,
-            e.TotalScore,
-            e.MaxScore,
-            e.ConductedByName)).ToList();
-
+        var exams = await _exams.ListAsync(filter, ct);
+        var items = exams.Select(MapListItem).ToList();
         return Result<IReadOnlyList<ExamListItemDto>>.Success(items);
     }
 
@@ -113,6 +113,17 @@ public sealed class ExamService : IExamService
         return Result<ExamSessionResponse>.Success(MapSession(exam));
     }
 
+    public async Task<Result<ExamDetailResponse>> GetDetailAsync(string examId, string userId, string role, CancellationToken ct = default)
+    {
+        var exam = await LoadAuthorizedAsync(examId, userId, role, ct);
+        if (exam is null)
+            return Result<ExamDetailResponse>.Failure(ErrorCode.NotFound, "exams.not_found");
+        if (exam.Status == ExamStatuses.InProgress)
+            return Result<ExamDetailResponse>.Failure(ErrorCode.Conflict, "exams.still_in_progress");
+
+        return Result<ExamDetailResponse>.Success(MapDetail(exam));
+    }
+
     public async Task<Result<ExamSessionResponse>> SaveAnswersAsync(
         string examId, string userId, string role, SaveAnswersRequest request, CancellationToken ct = default)
     {
@@ -146,13 +157,60 @@ public sealed class ExamService : IExamService
         if (request?.Answers is { Count: > 0 })
             MergeAnswers(exam, request.Answers);
 
-        exam.Status = ExamStatuses.Submitted;
         exam.SubmittedAt = DateTime.UtcNow;
+        ExamGrading.ApplyAutoGrading(exam);
+
         if (!await _exams.ReplaceAsync(exam, ct))
             return Result<SubmitExamResponse>.Failure(ErrorCode.NotFound, "exams.not_found");
 
         return Result<SubmitExamResponse>.Success(new SubmitExamResponse(
-            exam.Id, exam.Status, exam.SubmittedAt.Value));
+            exam.Id,
+            exam.Status,
+            exam.SubmittedAt.Value,
+            exam.AutoGradedScore,
+            exam.IsFullyGraded,
+            exam.TotalScore));
+    }
+
+    public async Task<Result<GradeExamResponse>> GradeAsync(
+        string examId, string userId, string role, GradeExamRequest request, CancellationToken ct = default)
+    {
+        var exam = await LoadAuthorizedAsync(examId, userId, role, ct);
+        if (exam is null)
+            return Result<GradeExamResponse>.Failure(ErrorCode.NotFound, "exams.not_found");
+        if (exam.Status == ExamStatuses.InProgress)
+            return Result<GradeExamResponse>.Failure(ErrorCode.Conflict, "exams.still_in_progress");
+        if (exam.IsFullyGraded && exam.Status == ExamStatuses.Graded)
+            return Result<GradeExamResponse>.Failure(ErrorCode.Conflict, "exams.already_graded");
+
+        if (request.EssayScores is null || request.EssayScores.Count == 0)
+            return Result<GradeExamResponse>.Failure(ErrorCode.Validation, "exams.essay_scores_required");
+
+        foreach (var input in request.EssayScores)
+        {
+            var question = exam.QuestionsSnapshot.FirstOrDefault(q => q.Id == input.QuestionId);
+            if (question is null || question.Type != QuestionTypes.Essay)
+                return Result<GradeExamResponse>.Failure(ErrorCode.Validation, "exams.invalid_essay_question");
+            if (input.EarnedPoints < 0 || input.EarnedPoints > question.Points)
+                return Result<GradeExamResponse>.Failure(ErrorCode.Validation, "exams.invalid_essay_score");
+        }
+
+        var pairs = request.EssayScores.Select(s => (s.QuestionId, s.EarnedPoints)).ToList();
+        ExamGrading.ApplyEssayScores(exam, pairs, request.Finalize);
+
+        if (request.Finalize)
+        {
+            var essayIds = exam.QuestionsSnapshot.Where(q => q.Type == QuestionTypes.Essay).Select(q => q.Id).ToHashSet();
+            var allGraded = essayIds.All(id => exam.Scores.Any(s => s.QuestionId == id && !s.IsAutoGraded));
+            if (!allGraded)
+                return Result<GradeExamResponse>.Failure(ErrorCode.Validation, "exams.essays_not_all_graded");
+        }
+
+        if (!await _exams.ReplaceAsync(exam, ct))
+            return Result<GradeExamResponse>.Failure(ErrorCode.NotFound, "exams.not_found");
+
+        return Result<GradeExamResponse>.Success(new GradeExamResponse(
+            exam.Id, exam.Status, exam.TotalScore, exam.IsFullyGraded));
     }
 
     private async Task<Exam?> LoadAuthorizedAsync(string examId, string userId, string role, CancellationToken ct)
@@ -186,6 +244,20 @@ public sealed class ExamService : IExamService
         }
     }
 
+    private static ExamListItemDto MapListItem(Exam exam) => new(
+        exam.Id,
+        exam.CandidateName,
+        exam.PositionName,
+        exam.PositionId,
+        exam.Status,
+        exam.StartedAt,
+        exam.SubmittedAt,
+        exam.TotalScore,
+        exam.MaxScore,
+        exam.AutoGradedScore,
+        exam.IsFullyGraded,
+        exam.ConductedByName);
+
     internal static ExamSessionResponse MapSession(Exam exam)
     {
         var questions = exam.QuestionsSnapshot
@@ -213,5 +285,44 @@ public sealed class ExamService : IExamService
             exam.Status,
             questions,
             answers);
+    }
+
+    internal static ExamDetailResponse MapDetail(Exam exam)
+    {
+        var answerLookup = exam.Answers.ToDictionary(a => a.QuestionId);
+        var questions = exam.QuestionsSnapshot
+            .Select((q, i) =>
+            {
+                answerLookup.TryGetValue(q.Id, out var answer);
+                var isCorrect = ExamGrading.IsAutoAnswerCorrect(q, answer);
+                return new ExamAnswerReviewDto(
+                    q.Id,
+                    q.Text,
+                    q.Type,
+                    q.Points,
+                    i,
+                    q.Choices?.Select(c => new ExamSessionChoiceDto(c.Id, c.Text)).ToList(),
+                    ExamGrading.FormatCandidateAnswer(q, answer),
+                    ExamGrading.FormatCorrectAnswer(q),
+                    isCorrect,
+                    ExamGrading.GetEarnedPoints(exam, q.Id),
+                    q.Type != QuestionTypes.Essay);
+            })
+            .OrderBy(q => q.Order)
+            .ToList();
+
+        return new ExamDetailResponse(
+            exam.Id,
+            exam.CandidateName,
+            exam.PositionName,
+            exam.Status,
+            exam.StartedAt,
+            exam.SubmittedAt,
+            exam.TotalScore,
+            exam.MaxScore,
+            exam.AutoGradedScore,
+            exam.IsFullyGraded,
+            exam.ConductedByName,
+            questions);
     }
 }

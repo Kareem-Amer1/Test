@@ -149,6 +149,9 @@ export default function ExamSessionPage() {
         </p>
         <div className="flex flex-wrap justify-center gap-2">
           <Button asChild variant="outline">
+            <Link to={`/exams/${session.id}`}>{t("exams.viewReview", "View review")}</Link>
+          </Button>
+          <Button asChild variant="outline">
             <Link to="/exams">{t("exams.viewAll", "View all exams")}</Link>
           </Button>
           <Button asChild>

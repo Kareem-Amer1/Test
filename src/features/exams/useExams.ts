@@ -1,15 +1,28 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { examsApi } from "./exams.api";
-import type { CreateExamDto, ExamAnswerInput } from "./exams.types";
+import type { CreateExamDto, ExamAnswerInput, ExamListFilters, GradeExamDto } from "./exams.types";
 
 export const examSessionKey = (id: string) => ["exams", id, "session"] as const;
+export const examDetailKey = (id: string) => ["exams", id, "detail"] as const;
 export const EXAMS_LIST_KEY = ["exams", "list"] as const;
 
-export function useExamsList() {
+export function examsListKey(filters?: ExamListFilters) {
+  return [...EXAMS_LIST_KEY, filters ?? {}] as const;
+}
+
+export function useExamsList(filters?: ExamListFilters) {
   return useQuery({
-    queryKey: EXAMS_LIST_KEY,
-    queryFn: examsApi.list,
+    queryKey: examsListKey(filters),
+    queryFn: () => examsApi.list(filters),
     staleTime: 30_000,
+  });
+}
+
+export function useExamDetail(examId: string) {
+  return useQuery({
+    queryKey: examDetailKey(examId),
+    queryFn: () => examsApi.getDetail(examId),
+    enabled: !!examId,
   });
 }
 
@@ -26,8 +39,6 @@ export function useExamSession(examId: string) {
     queryKey: examSessionKey(examId),
     queryFn: () => examsApi.getSession(examId),
     enabled: !!examId,
-    refetchInterval: (query) =>
-      query.state.data?.status === "InProgress" ? false : false,
   });
 }
 
@@ -45,6 +56,17 @@ export function useSubmitExam(examId: string) {
     mutationFn: (answers: ExamAnswerInput[]) => examsApi.submit(examId, answers),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: examSessionKey(examId) });
+      void qc.invalidateQueries({ queryKey: EXAMS_LIST_KEY });
+    },
+  });
+}
+
+export function useGradeExam(examId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (dto: GradeExamDto) => examsApi.grade(examId, dto),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: examDetailKey(examId) });
       void qc.invalidateQueries({ queryKey: EXAMS_LIST_KEY });
     },
   });

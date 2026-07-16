@@ -28,12 +28,54 @@ public sealed record ExamListItemDto(
     string Id,
     string CandidateName,
     string PositionName,
+    string PositionId,
     string Status,
     DateTime StartedAt,
     DateTime? SubmittedAt,
     int? TotalScore,
     int MaxScore,
+    int AutoGradedScore,
+    bool IsFullyGraded,
     string ConductedByName);
+
+public sealed record ExamListQueryDto(string? PositionId, string? Status, DateTime? From, DateTime? To);
+
+public sealed record ExamAnswerReviewDto(
+    string QuestionId,
+    string QuestionText,
+    string QuestionType,
+    int Points,
+    int Order,
+    IReadOnlyList<ExamSessionChoiceDto>? Choices,
+    string CandidateAnswer,
+    string CorrectAnswer,
+    bool? IsCorrect,
+    int? EarnedPoints,
+    bool IsAutoGraded);
+
+public sealed record ExamDetailResponse(
+    string Id,
+    string CandidateName,
+    string PositionName,
+    string Status,
+    DateTime StartedAt,
+    DateTime? SubmittedAt,
+    int? TotalScore,
+    int MaxScore,
+    int AutoGradedScore,
+    bool IsFullyGraded,
+    string ConductedByName,
+    IReadOnlyList<ExamAnswerReviewDto> Questions);
+
+public sealed record EssayScoreInputDto(string QuestionId, int EarnedPoints);
+
+public sealed record GradeExamRequest(IReadOnlyList<EssayScoreInputDto> EssayScores, bool Finalize);
+
+public sealed record GradeExamResponse(
+    string Id,
+    string Status,
+    int? TotalScore,
+    bool IsFullyGraded);
 
 public sealed record ExamSessionResponse(
     string Id,
@@ -45,4 +87,10 @@ public sealed record ExamSessionResponse(
     IReadOnlyList<ExamSessionQuestionDto> Questions,
     IReadOnlyList<ExamAnswerInputDto> Answers);
 
-public sealed record SubmitExamResponse(string Id, string Status, DateTime SubmittedAt);
+public sealed record SubmitExamResponse(
+    string Id,
+    string Status,
+    DateTime SubmittedAt,
+    int AutoGradedScore,
+    bool IsFullyGraded,
+    int? TotalScore);

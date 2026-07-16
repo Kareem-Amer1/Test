@@ -13,6 +13,7 @@ import UsersAdmin from "./pages/UsersAdmin";
 import PositionsPage from "./features/positions/PositionsPage";
 import TemplateEditorPage from "./features/positions/TemplateEditorPage";
 import ExamSessionPage from "./features/exams/ExamSessionPage";
+import ExamDetailPage from "./features/exams/ExamDetailPage";
 import ExamsPage from "./features/exams/ExamsPage";
 import NotFound from "./pages/NotFound";
 import { POST_LOGIN_ROUTE } from "./config/appMode";
@@ -37,6 +38,7 @@ const App = () => (
                 <Route path="/positions/:positionId/template" element={<TemplateEditorPage />} />
                 <Route path="/exams" element={<ExamsPage />} />
                 <Route path="/exams/:examId/session" element={<ExamSessionPage />} />
+                <Route path="/exams/:examId" element={<ExamDetailPage />} />
                 <Route element={<RoleRoute allowedRoles={[USER_ROLES.SuperAdmin]} />}>
                   <Route path="/users" element={<UsersAdmin />} />
                 </Route>

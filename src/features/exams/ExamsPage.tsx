@@ -1,5 +1,6 @@
-import { useTranslation } from "react-i18next";
+import { useState } from "react";
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -10,16 +11,17 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { usePositions } from "@/features/positions/usePositions";
 import { useExamsList } from "./useExams";
-
-function formatDate(value: string | null | undefined) {
-  if (!value) return "—";
-  return new Date(value).toLocaleString();
-}
+import { ExamFilters } from "./components/ExamFilters";
+import { formatDateTime, formatExamScore } from "./constants";
+import type { ExamListFilters } from "./exams.types";
 
 export default function ExamsPage() {
   const { t } = useTranslation();
-  const { data: exams, isLoading, isError, refetch } = useExamsList();
+  const [filters, setFilters] = useState<ExamListFilters>({});
+  const { data: positions } = usePositions();
+  const { data: exams, isLoading, isError, refetch } = useExamsList(filters);
 
   if (isLoading) {
     return <p className="text-sm text-muted-foreground">{t("common.loading", "Loading…")}</p>;
@@ -43,14 +45,20 @@ export default function ExamsPage() {
         </p>
       </div>
 
-      <div className="rounded-lg border border-app-border-strong">
+      <ExamFilters
+        filters={filters}
+        positions={positions ?? []}
+        onChange={setFilters}
+      />
+
+      <div className="rounded-lg border border-app-border-strong overflow-hidden">
         <Table>
           <TableHeader>
             <TableRow>
               <TableHead>{t("exams.candidateName", "Candidate name")}</TableHead>
               <TableHead>{t("exams.position", "Position")}</TableHead>
               <TableHead>{t("common.status", "Status")}</TableHead>
-              <TableHead>{t("exams.started", "Started")}</TableHead>
+              <TableHead>{t("exams.score", "Score")}</TableHead>
               <TableHead>{t("exams.submittedAt", "Submitted")}</TableHead>
               <TableHead>{t("exams.conductedBy", "Conducted by")}</TableHead>
             </TableRow>
@@ -71,17 +79,19 @@ export default function ExamsPage() {
                         {exam.candidateName}
                       </Link>
                     ) : (
-                      exam.candidateName
+                      <Link to={`/exams/${exam.id}`} className="hover:underline">
+                        {exam.candidateName}
+                      </Link>
                     )}
                   </TableCell>
                   <TableCell>{exam.positionName}</TableCell>
                   <TableCell>
-                    <Badge variant={exam.status === "InProgress" ? "default" : "secondary"}>
+                    <Badge variant={exam.status === "Graded" ? "default" : "secondary"}>
                       {exam.status}
                     </Badge>
                   </TableCell>
-                  <TableCell>{formatDate(exam.startedAt)}</TableCell>
-                  <TableCell>{formatDate(exam.submittedAt)}</TableCell>
+                  <TableCell>{formatExamScore(exam.totalScore, exam.maxScore)}</TableCell>
+                  <TableCell>{formatDateTime(exam.submittedAt)}</TableCell>
                   <TableCell>{exam.conductedByName}</TableCell>
                 </TableRow>
               ))

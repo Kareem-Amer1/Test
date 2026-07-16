@@ -17,17 +17,24 @@ public sealed class ExamRepository : IExamRepository
     public Task<Exam?> GetByIdAsync(string id, CancellationToken ct = default) =>
         _col.Find(e => e.Id == id).FirstOrDefaultAsync(ct)!;
 
-    public async Task<IReadOnlyList<Exam>> ListByConductedByAsync(string userId, CancellationToken ct = default)
+    public async Task<IReadOnlyList<Exam>> ListAsync(ExamListFilter filter, CancellationToken ct = default)
     {
-        var items = await _col.Find(e => e.ConductedBy == userId)
-            .SortByDescending(e => e.StartedAt)
-            .ToListAsync(ct);
-        return items;
-    }
+        var builder = Builders<Exam>.Filter;
+        var filters = new List<FilterDefinition<Exam>>();
 
-    public async Task<IReadOnlyList<Exam>> ListAllAsync(CancellationToken ct = default)
-    {
-        var items = await _col.Find(FilterDefinition<Exam>.Empty)
+        if (!string.IsNullOrWhiteSpace(filter.ConductedBy))
+            filters.Add(builder.Eq(e => e.ConductedBy, filter.ConductedBy));
+        if (!string.IsNullOrWhiteSpace(filter.PositionId))
+            filters.Add(builder.Eq(e => e.PositionId, filter.PositionId));
+        if (!string.IsNullOrWhiteSpace(filter.Status))
+            filters.Add(builder.Eq(e => e.Status, filter.Status));
+        if (filter.From.HasValue)
+            filters.Add(builder.Gte(e => e.StartedAt, filter.From.Value));
+        if (filter.To.HasValue)
+            filters.Add(builder.Lte(e => e.StartedAt, filter.To.Value));
+
+        var combined = filters.Count > 0 ? builder.And(filters) : builder.Empty;
+        var items = await _col.Find(combined)
             .SortByDescending(e => e.StartedAt)
             .ToListAsync(ct);
         return items;
