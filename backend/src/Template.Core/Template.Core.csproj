@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>Template.Core</RootNamespace>
+    <AssemblyName>Template.Core</AssemblyName>
+  </PropertyGroup>
+  <ItemGroup>
+    <!-- BSON attributes (BsonId, BsonElement, BsonRepresentation, ...) live in MongoDB.Bson. -->
+    <PackageReference Include="MongoDB.Bson" Version="2.28.0" />
+  </ItemGroup>
+</Project>

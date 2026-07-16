@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>Template.Application</RootNamespace>
+    <AssemblyName>Template.Application</AssemblyName>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Template.Core\Template.Core.csproj" />
+    <ProjectReference Include="..\Template.Contracts\Template.Contracts.csproj" />
+  </ItemGroup>
+</Project>

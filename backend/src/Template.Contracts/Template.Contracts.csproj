@@ -1,0 +1,6 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>Template.Contracts</RootNamespace>
+    <AssemblyName>Template.Contracts</AssemblyName>
+  </PropertyGroup>
+</Project>

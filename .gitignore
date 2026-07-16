@@ -1,0 +1,40 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sw?
+
+# C# / .NET build artifacts (backend/csharp)
+backend/csharp/**/bin/
+backend/csharp/**/obj/
+backend/csharp/**/.vs/
+backend/csharp/**/packages/
+backend/csharp/**/*.user
+backend/csharp/**/*.suo
+backend/csharp/**/*.userosscache
+backend/csharp/**/*.sln.docstates
+backend/csharp/**/*.nupkg
+backend/csharp/**/*.snupkg
+backend/csharp/**/*.dll
+backend/csharp/**/*.exe
+backend/csharp/**/*.pdb
+
+docs/
