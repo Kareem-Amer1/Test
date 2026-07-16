@@ -58,19 +58,3 @@ public sealed class ExamTemplateRepository : IExamTemplateRepository
         return r.DeletedCount > 0;
     }
 }
-
-public sealed class ExamRepository : IExamRepository
-{
-    private readonly IMongoCollection<Exam> _col;
-
-    public ExamRepository(IMongoClientFactory factory)
-    {
-        _col = factory.GetDatabase().GetCollection<Exam>("exams");
-    }
-
-    public async Task<bool> AnyByPositionIdAsync(string positionId, CancellationToken ct = default)
-    {
-        var count = await _col.CountDocumentsAsync(e => e.PositionId == positionId, cancellationToken: ct);
-        return count > 0;
-    }
-}

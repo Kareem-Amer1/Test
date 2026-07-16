@@ -17,8 +17,3 @@ public interface IExamTemplateRepository
     Task<bool> ReplaceAsync(ExamTemplate template, CancellationToken ct = default);
     Task<bool> DeleteByPositionIdAsync(string positionId, CancellationToken ct = default);
 }
-
-public interface IExamRepository
-{
-    Task<bool> AnyByPositionIdAsync(string positionId, CancellationToken ct = default);
-}

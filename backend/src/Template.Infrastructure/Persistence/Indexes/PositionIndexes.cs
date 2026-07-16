@@ -35,6 +35,11 @@ public static class ExamIndexes
         var positionIdx = new CreateIndexModel<Exam>(
             Builders<Exam>.IndexKeys.Ascending(e => e.PositionId),
             new CreateIndexOptions { Name = "ix_exams_positionId" });
-        return col.Indexes.CreateOneAsync(positionIdx, cancellationToken: ct);
+        var conductorIdx = new CreateIndexModel<Exam>(
+            Builders<Exam>.IndexKeys.Ascending(e => e.ConductedBy),
+            new CreateIndexOptions { Name = "ix_exams_conductedBy" });
+        return Task.WhenAll(
+            col.Indexes.CreateOneAsync(positionIdx, cancellationToken: ct),
+            col.Indexes.CreateOneAsync(conductorIdx, cancellationToken: ct));
     }
 }

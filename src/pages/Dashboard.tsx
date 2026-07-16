@@ -35,8 +35,8 @@ export default function Dashboard() {
 
       <div className="rounded-lg border border-dashed border-app-border-strong bg-muted/30 p-6 text-sm text-muted-foreground">
         {t(
-          "dashboard.phase2Note",
-          "Use Positions in the sidebar to manage exam templates for each job role.",
+          "dashboard.phase3Note",
+          "Go to Positions and click Start exam to conduct a candidate interview session.",
         )}
       </div>
     </div>

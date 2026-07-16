@@ -7,6 +7,7 @@ import {
   LayoutGrid,
   Users,
   Briefcase,
+  ClipboardList,
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -25,6 +26,7 @@ export function FancySidebar() {
   const workspace: Item[] = [
     { to: "/dashboard", label: t("nav.dashboard", "Dashboard"), icon: LayoutGrid, end: true },
     { to: "/positions", label: t("nav.positions", "Positions"), icon: Briefcase, end: true },
+    { to: "/exams", label: t("nav.exams", "Exams"), icon: ClipboardList, end: true },
   ];
   const manage: Item[] = isSuperAdmin
     ? [{ to: "/users", label: t("nav.users", "HR Accounts"), icon: Users, end: true }]
