@@ -1,0 +1,90 @@
+/* Sibling-shell layout for the Copilot assistant (blueprint §2). */
+
+.alk-copilot-shell {
+  display: flex;
+  flex-direction: row;
+  height: 100vh;
+  width: 100%;
+  overflow: hidden;
+}
+
+.alk-shell-content {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.alk-copilot-overlay {
+  flex: 0 0 auto;
+  width: 0;
+  height: 100vh;
+  overflow: hidden;
+  background: hsl(var(--background));
+  border-inline-start: 1px solid hsl(var(--border));
+  transition: width 0.25s ease;
+  display: flex;
+  flex-direction: column;
+}
+
+.alk-copilot-shell[data-copilot-open="true"] .alk-copilot-overlay {
+  width: 380px;
+  max-width: 100vw;
+}
+
+@media (max-width: 640px) {
+  .alk-copilot-shell[data-copilot-open="true"] .alk-copilot-overlay {
+    width: 100vw;
+  }
+  .alk-copilot-shell[data-copilot-open="true"] .alk-shell-content {
+    display: none;
+  }
+}
+
+.alk-copilot-overlay > :not(header) {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Ensure the CopilotChat view fills the panel height and the scrollable message
+   area starts at the top with no dead space. */
+.alk-copilot-overlay .alk-copilot-chat {
+  height: 100% !important;
+  max-height: 100% !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+.alk-copilot-overlay .alk-copilot-chat > :first-child {
+  flex: 1 1 0% !important;
+  min-height: 0 !important;
+  margin-top: 0 !important;
+  padding-top: 0 !important;
+}
+
+.alk-copilot-overlay .alk-copilot-chat > [data-testid="copilot-input-overlay"] {
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0;
+  margin-top: 0 !important;
+  padding-top: 0 !important;
+}
+
+.alk-copilot-overlay .alk-copilot-chat [data-testid="copilot-scroll-content"],
+.alk-copilot-overlay .alk-copilot-chat [data-pin-to-send-spacer] {
+  margin-top: 0 !important;
+  padding-top: 0 !important;
+}
+
+.alk-copilot-overlay .alk-copilot-chat [data-testid="copilot-chat-input"] {
+  margin-top: 0 !important;
+}
+
+/* Left indent for assistant messages to visually separate them from the edge. */
+.alk-copilot-overlay .alk-copilot-chat [data-testid="copilot-assistant-message"] {
+  padding-inline-start: 0.75rem;
+}

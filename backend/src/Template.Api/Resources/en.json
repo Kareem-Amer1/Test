@@ -1,0 +1,13 @@
+{
+  "auth.email_invalid": "Email address is invalid.",
+  "auth.password_too_short": "Password must be at least 8 characters.",
+  "auth.email_taken": "An account with that email already exists.",
+  "auth.invalid_credentials": "Invalid email or password.",
+  "auth.refresh_required": "A refresh token is required.",
+  "auth.refresh_invalid": "Refresh token is invalid or expired.",
+  "auth.unauthorized": "You are not authorized.",
+  "projects.not_found": "Project not found.",
+  "projects.name_required": "Project name is required.",
+  "projects.update_failed": "Failed to update project.",
+  "common.unexpected": "An unexpected error occurred."
+}

@@ -1,0 +1,40 @@
+name: Trigger Template Deploy
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ master ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      image_tag: ${{ steps.settag.outputs.image_tag }}
+    steps:
+
+      - name: Set tag
+        id: settag
+        uses: Khz-DevOps/github-actions/docker-set-tag@master
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - uses: Khz-DevOps/github-actions/docker-build-push@master
+        with:
+          compose-file: docker-compose.yml
+          image_tag: ${{ steps.settag.outputs.image_tag }}
+          username: ${{ secrets.CR_USERNAME }}
+          password: ${{ secrets.CR_PASSWORD }}
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: Khz-DevOps/github-actions/docker-gitops-deploy@master
+        with:
+          token: ${{ secrets.PAT }}
+          overlay_dir: k8s/overlays/aws-test
+          image_name: cr.alkhwarizmi.online/template
+          image_tag: ${{ needs.build.outputs.image_tag }}

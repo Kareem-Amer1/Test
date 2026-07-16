@@ -1,0 +1,13 @@
+{
+  "auth.email_invalid": "البريد الإلكتروني غير صالح.",
+  "auth.password_too_short": "يجب أن تكون كلمة المرور 8 أحرف على الأقل.",
+  "auth.email_taken": "يوجد حساب بهذا البريد الإلكتروني بالفعل.",
+  "auth.invalid_credentials": "البريد الإلكتروني أو كلمة المرور غير صحيحة.",
+  "auth.refresh_required": "رمز التحديث مطلوب.",
+  "auth.refresh_invalid": "رمز التحديث غير صالح أو منتهي الصلاحية.",
+  "auth.unauthorized": "غير مصرح لك.",
+  "projects.not_found": "المشروع غير موجود.",
+  "projects.name_required": "اسم المشروع مطلوب.",
+  "projects.update_failed": "تعذر تحديث المشروع.",
+  "common.unexpected": "حدث خطأ غير متوقع."
+}
