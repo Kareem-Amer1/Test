@@ -12,14 +12,22 @@ public sealed record TemplateQuestionDto(
     string? CorrectChoiceId,
     int Order);
 
+public sealed record TemplatePartitionDto(
+    string Id,
+    string Name,
+    int Order,
+    IReadOnlyList<TemplateQuestionDto> Questions);
+
 public sealed record TemplateResponse(
     string Id,
     string PositionId,
     int DurationMinutes,
-    IReadOnlyList<TemplateQuestionDto> Questions,
+    IReadOnlyList<TemplatePartitionDto> Partitions,
     DateTime LastModifiedAt);
 
 public sealed record UpdateDurationRequest(int DurationMinutes);
+
+public sealed record UpsertPartitionRequest(string Name);
 
 public sealed record McqChoiceInput(string? Id, string Text);
 

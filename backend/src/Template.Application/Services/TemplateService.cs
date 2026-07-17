@@ -9,10 +9,13 @@ public interface ITemplateService
 {
     Task<Result<TemplateResponse>> GetByPositionIdAsync(string positionId, CancellationToken ct = default);
     Task<Result<TemplateResponse>> UpdateDurationAsync(string positionId, string userId, UpdateDurationRequest request, CancellationToken ct = default);
-    Task<Result<TemplateResponse>> AddQuestionAsync(string positionId, string userId, UpsertQuestionRequest request, CancellationToken ct = default);
-    Task<Result<TemplateResponse>> UpdateQuestionAsync(string positionId, string userId, string questionId, UpsertQuestionRequest request, CancellationToken ct = default);
-    Task<Result<TemplateResponse>> DeleteQuestionAsync(string positionId, string userId, string questionId, CancellationToken ct = default);
-    Task<Result<TemplateResponse>> ReorderQuestionsAsync(string positionId, string userId, ReorderQuestionsRequest request, CancellationToken ct = default);
+    Task<Result<TemplateResponse>> AddPartitionAsync(string positionId, string userId, UpsertPartitionRequest request, CancellationToken ct = default);
+    Task<Result<TemplateResponse>> UpdatePartitionAsync(string positionId, string userId, string partitionId, UpsertPartitionRequest request, CancellationToken ct = default);
+    Task<Result<TemplateResponse>> DeletePartitionAsync(string positionId, string userId, string partitionId, CancellationToken ct = default);
+    Task<Result<TemplateResponse>> AddQuestionAsync(string positionId, string userId, string partitionId, UpsertQuestionRequest request, CancellationToken ct = default);
+    Task<Result<TemplateResponse>> UpdateQuestionAsync(string positionId, string userId, string partitionId, string questionId, UpsertQuestionRequest request, CancellationToken ct = default);
+    Task<Result<TemplateResponse>> DeleteQuestionAsync(string positionId, string userId, string partitionId, string questionId, CancellationToken ct = default);
+    Task<Result<TemplateResponse>> ReorderQuestionsAsync(string positionId, string userId, string partitionId, ReorderQuestionsRequest request, CancellationToken ct = default);
 }
 
 public sealed class TemplateService : ITemplateService
@@ -28,7 +31,7 @@ public sealed class TemplateService : ITemplateService
 
     public async Task<Result<TemplateResponse>> GetByPositionIdAsync(string positionId, CancellationToken ct = default)
     {
-        var template = await LoadTemplateAsync(positionId, ct);
+        var template = await LoadTemplateAsync(positionId, persistMigration: false, ct);
         if (template is null)
             return Result<TemplateResponse>.Failure(ErrorCode.NotFound, "templates.not_found");
         return Result<TemplateResponse>.Success(Map(template));
@@ -39,114 +42,194 @@ public sealed class TemplateService : ITemplateService
         if (request.DurationMinutes < 1 || request.DurationMinutes > 480)
             return Result<TemplateResponse>.Failure(ErrorCode.Validation, "templates.duration_invalid");
 
-        var template = await LoadTemplateAsync(positionId, ct);
+        var template = await LoadTemplateAsync(positionId, persistMigration: true, ct);
         if (template is null)
             return Result<TemplateResponse>.Failure(ErrorCode.NotFound, "templates.not_found");
 
         template.DurationMinutes = request.DurationMinutes;
-        Touch(template, userId);
-        await _templates.ReplaceAsync(template, ct);
+        await SaveAsync(template, userId, ct);
         return Result<TemplateResponse>.Success(Map(template));
     }
 
-    public async Task<Result<TemplateResponse>> AddQuestionAsync(string positionId, string userId, UpsertQuestionRequest request, CancellationToken ct = default)
+    public async Task<Result<TemplateResponse>> AddPartitionAsync(string positionId, string userId, UpsertPartitionRequest request, CancellationToken ct = default)
     {
-        var template = await LoadTemplateAsync(positionId, ct);
+        var name = request.Name?.Trim() ?? string.Empty;
+        if (name.Length < 2)
+            return Result<TemplateResponse>.Failure(ErrorCode.Validation, "templates.partition_name_required");
+
+        var template = await LoadTemplateAsync(positionId, persistMigration: true, ct);
         if (template is null)
             return Result<TemplateResponse>.Failure(ErrorCode.NotFound, "templates.not_found");
 
-        var build = BuildQuestion(request, template.Questions.Count);
+        template.Partitions.Add(new TemplatePartition
+        {
+            Id = Guid.NewGuid().ToString("N"),
+            Name = name,
+            Order = template.Partitions.Count,
+        });
+
+        await SaveAsync(template, userId, ct);
+        return Result<TemplateResponse>.Success(Map(template));
+    }
+
+    public async Task<Result<TemplateResponse>> UpdatePartitionAsync(
+        string positionId, string userId, string partitionId, UpsertPartitionRequest request, CancellationToken ct = default)
+    {
+        var name = request.Name?.Trim() ?? string.Empty;
+        if (name.Length < 2)
+            return Result<TemplateResponse>.Failure(ErrorCode.Validation, "templates.partition_name_required");
+
+        var template = await LoadTemplateAsync(positionId, persistMigration: true, ct);
+        if (template is null)
+            return Result<TemplateResponse>.Failure(ErrorCode.NotFound, "templates.not_found");
+
+        var partition = TemplateStructure.FindPartition(template, partitionId);
+        if (partition is null)
+            return Result<TemplateResponse>.Failure(ErrorCode.NotFound, "templates.partition_not_found");
+
+        partition.Name = name;
+        await SaveAsync(template, userId, ct);
+        return Result<TemplateResponse>.Success(Map(template));
+    }
+
+    public async Task<Result<TemplateResponse>> DeletePartitionAsync(
+        string positionId, string userId, string partitionId, CancellationToken ct = default)
+    {
+        var template = await LoadTemplateAsync(positionId, persistMigration: true, ct);
+        if (template is null)
+            return Result<TemplateResponse>.Failure(ErrorCode.NotFound, "templates.not_found");
+
+        var removed = template.Partitions.RemoveAll(p => p.Id == partitionId);
+        if (removed == 0)
+            return Result<TemplateResponse>.Failure(ErrorCode.NotFound, "templates.partition_not_found");
+
+        TemplateStructure.ReindexPartitionOrders(template.Partitions);
+        await SaveAsync(template, userId, ct);
+        return Result<TemplateResponse>.Success(Map(template));
+    }
+
+    public async Task<Result<TemplateResponse>> AddQuestionAsync(
+        string positionId, string userId, string partitionId, UpsertQuestionRequest request, CancellationToken ct = default)
+    {
+        var template = await LoadTemplateAsync(positionId, persistMigration: true, ct);
+        if (template is null)
+            return Result<TemplateResponse>.Failure(ErrorCode.NotFound, "templates.not_found");
+
+        var partition = TemplateStructure.FindPartition(template, partitionId);
+        if (partition is null)
+            return Result<TemplateResponse>.Failure(ErrorCode.NotFound, "templates.partition_not_found");
+
+        var build = BuildQuestion(request, partition.Questions.Count);
         if (!build.IsSuccess)
             return Result<TemplateResponse>.Failure(build.Error.Code, build.Error.Message);
 
-        template.Questions.Add(build.Value!);
-        Touch(template, userId);
-        await _templates.ReplaceAsync(template, ct);
+        partition.Questions.Add(build.Value!);
+        await SaveAsync(template, userId, ct);
         return Result<TemplateResponse>.Success(Map(template));
     }
 
-    public async Task<Result<TemplateResponse>> UpdateQuestionAsync(string positionId, string userId, string questionId, UpsertQuestionRequest request, CancellationToken ct = default)
+    public async Task<Result<TemplateResponse>> UpdateQuestionAsync(
+        string positionId, string userId, string partitionId, string questionId, UpsertQuestionRequest request, CancellationToken ct = default)
     {
-        var template = await LoadTemplateAsync(positionId, ct);
+        var template = await LoadTemplateAsync(positionId, persistMigration: true, ct);
         if (template is null)
             return Result<TemplateResponse>.Failure(ErrorCode.NotFound, "templates.not_found");
 
-        var idx = template.Questions.FindIndex(q => q.Id == questionId);
+        var partition = TemplateStructure.FindPartition(template, partitionId);
+        if (partition is null)
+            return Result<TemplateResponse>.Failure(ErrorCode.NotFound, "templates.partition_not_found");
+
+        var idx = partition.Questions.FindIndex(q => q.Id == questionId);
         if (idx < 0)
             return Result<TemplateResponse>.Failure(ErrorCode.NotFound, "templates.question_not_found");
 
-        var build = BuildQuestion(request, template.Questions[idx].Order, questionId);
+        var build = BuildQuestion(request, partition.Questions[idx].Order, questionId);
         if (!build.IsSuccess)
             return Result<TemplateResponse>.Failure(build.Error.Code, build.Error.Message);
 
-        template.Questions[idx] = build.Value!;
-        Touch(template, userId);
-        await _templates.ReplaceAsync(template, ct);
+        partition.Questions[idx] = build.Value!;
+        await SaveAsync(template, userId, ct);
         return Result<TemplateResponse>.Success(Map(template));
     }
 
-    public async Task<Result<TemplateResponse>> DeleteQuestionAsync(string positionId, string userId, string questionId, CancellationToken ct = default)
+    public async Task<Result<TemplateResponse>> DeleteQuestionAsync(
+        string positionId, string userId, string partitionId, string questionId, CancellationToken ct = default)
     {
-        var template = await LoadTemplateAsync(positionId, ct);
+        var template = await LoadTemplateAsync(positionId, persistMigration: true, ct);
         if (template is null)
             return Result<TemplateResponse>.Failure(ErrorCode.NotFound, "templates.not_found");
 
-        var removed = template.Questions.RemoveAll(q => q.Id == questionId);
+        var partition = TemplateStructure.FindPartition(template, partitionId);
+        if (partition is null)
+            return Result<TemplateResponse>.Failure(ErrorCode.NotFound, "templates.partition_not_found");
+
+        var removed = partition.Questions.RemoveAll(q => q.Id == questionId);
         if (removed == 0)
             return Result<TemplateResponse>.Failure(ErrorCode.NotFound, "templates.question_not_found");
 
-        ReindexOrders(template.Questions);
-        Touch(template, userId);
-        await _templates.ReplaceAsync(template, ct);
+        TemplateStructure.ReindexQuestionOrders(partition.Questions);
+        await SaveAsync(template, userId, ct);
         return Result<TemplateResponse>.Success(Map(template));
     }
 
-    public async Task<Result<TemplateResponse>> ReorderQuestionsAsync(string positionId, string userId, ReorderQuestionsRequest request, CancellationToken ct = default)
+    public async Task<Result<TemplateResponse>> ReorderQuestionsAsync(
+        string positionId, string userId, string partitionId, ReorderQuestionsRequest request, CancellationToken ct = default)
     {
-        var template = await LoadTemplateAsync(positionId, ct);
+        var template = await LoadTemplateAsync(positionId, persistMigration: true, ct);
         if (template is null)
             return Result<TemplateResponse>.Failure(ErrorCode.NotFound, "templates.not_found");
 
-        if (request.QuestionIds.Count != template.Questions.Count)
+        var partition = TemplateStructure.FindPartition(template, partitionId);
+        if (partition is null)
+            return Result<TemplateResponse>.Failure(ErrorCode.NotFound, "templates.partition_not_found");
+
+        if (request.QuestionIds.Count != partition.Questions.Count)
             return Result<TemplateResponse>.Failure(ErrorCode.Validation, "templates.reorder_invalid");
 
-        var lookup = template.Questions.ToDictionary(q => q.Id);
+        var lookup = partition.Questions.ToDictionary(q => q.Id);
         if (request.QuestionIds.Any(id => !lookup.ContainsKey(id)))
             return Result<TemplateResponse>.Failure(ErrorCode.Validation, "templates.reorder_invalid");
 
-        var reordered = request.QuestionIds.Select((id, i) =>
+        partition.Questions = request.QuestionIds.Select((id, i) =>
         {
             var q = lookup[id];
             q.Order = i;
             return q;
         }).ToList();
 
-        template.Questions = reordered;
-        Touch(template, userId);
-        await _templates.ReplaceAsync(template, ct);
+        await SaveAsync(template, userId, ct);
         return Result<TemplateResponse>.Success(Map(template));
     }
 
-    private async Task<ExamTemplate?> LoadTemplateAsync(string positionId, CancellationToken ct)
+    private async Task<ExamTemplate?> LoadTemplateAsync(string positionId, bool persistMigration, CancellationToken ct)
     {
         if (string.IsNullOrWhiteSpace(positionId))
             return null;
+
         var position = await _positions.GetByIdAsync(positionId, ct);
         if (position is null)
             return null;
-        return await _templates.GetByPositionIdAsync(positionId, ct);
+
+        var template = await _templates.GetByPositionIdAsync(positionId, ct);
+        if (template is null)
+            return null;
+
+        var hadLegacy = template.Partitions.Count == 0 && template.Questions.Count > 0;
+        TemplateStructure.EnsurePartitions(template);
+
+        if (persistMigration && hadLegacy)
+        {
+            await _templates.ReplaceAsync(template, ct);
+        }
+
+        return template;
     }
 
-    private static void Touch(ExamTemplate template, string userId)
+    private async Task SaveAsync(ExamTemplate template, string userId, CancellationToken ct)
     {
         template.LastModifiedAt = DateTime.UtcNow;
         template.LastModifiedBy = userId;
-    }
-
-    private static void ReindexOrders(List<TemplateQuestion> questions)
-    {
-        for (var i = 0; i < questions.Count; i++)
-            questions[i].Order = i;
+        await _templates.ReplaceAsync(template, ct);
     }
 
     private static Result<TemplateQuestion> BuildQuestion(UpsertQuestionRequest request, int order, string? existingId = null)
@@ -202,17 +285,24 @@ public sealed class TemplateService : ITemplateService
             template.Id,
             template.PositionId,
             template.DurationMinutes,
-            template.Questions
-                .OrderBy(q => q.Order)
-                .Select(q => new TemplateQuestionDto(
-                    q.Id,
-                    q.Type,
-                    q.Text,
-                    q.Points,
-                    q.CorrectAnswer,
-                    q.Choices?.Select(c => new McqChoiceDto(c.Id, c.Text)).ToList(),
-                    q.CorrectChoiceId,
-                    q.Order))
+            template.Partitions
+                .OrderBy(p => p.Order)
+                .Select(p => new TemplatePartitionDto(
+                    p.Id,
+                    p.Name,
+                    p.Order,
+                    p.Questions
+                        .OrderBy(q => q.Order)
+                        .Select(q => new TemplateQuestionDto(
+                            q.Id,
+                            q.Type,
+                            q.Text,
+                            q.Points,
+                            q.CorrectAnswer,
+                            q.Choices?.Select(c => new McqChoiceDto(c.Id, c.Text)).ToList(),
+                            q.CorrectChoiceId,
+                            q.Order))
+                        .ToList()))
                 .ToList(),
             template.LastModifiedAt);
 }

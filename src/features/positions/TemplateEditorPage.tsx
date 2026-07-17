@@ -4,7 +4,7 @@ import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { usePositions, useTemplate } from "./usePositions";
 import { TemplateDurationForm } from "./components/TemplateDurationForm";
-import { QuestionsList } from "./components/QuestionsList";
+import { PartitionsList } from "./components/PartitionsList";
 
 export default function TemplateEditorPage() {
   const { t } = useTranslation();
@@ -48,7 +48,7 @@ export default function TemplateEditorPage() {
         <TemplateDurationForm positionId={positionId} durationMinutes={template.durationMinutes} />
       </div>
 
-      <QuestionsList positionId={positionId} questions={template.questions} />
+      <PartitionsList positionId={positionId} partitions={template.partitions} />
     </div>
   );
 }

@@ -90,28 +90,40 @@ public sealed class SeedService : ISeedService
             };
             await _positions.InsertAsync(position, ct);
 
-            var questions = seed.Questions.Select(q => new TemplateQuestion
+            var partitions = seed.Partitions.Select((seedPartition, partitionOrder) => new TemplatePartition
             {
-                Id = q.Id,
-                Type = q.Type,
-                Text = q.Text,
-                Points = q.Points,
-                CorrectAnswer = q.CorrectAnswer,
-                Choices = q.Choices?.Select(c => new McqChoice { Id = c.Id, Text = c.Text }).ToList(),
-                CorrectChoiceId = q.CorrectChoiceId,
-                Order = q.Order,
+                Id = Guid.NewGuid().ToString("N"),
+                Name = seedPartition.Name,
+                Order = partitionOrder,
+                Questions = seedPartition.Questions.Select(q => new TemplateQuestion
+                {
+                    Id = q.Id,
+                    Type = q.Type,
+                    Text = q.Text,
+                    Points = q.Points,
+                    CorrectAnswer = q.CorrectAnswer,
+                    Choices = q.Choices?.Select(c => new McqChoice { Id = c.Id, Text = c.Text }).ToList(),
+                    CorrectChoiceId = q.CorrectChoiceId,
+                    Order = q.Order,
+                }).ToList(),
             }).ToList();
+
+            var questionCount = partitions.Sum(p => p.Questions.Count);
 
             await _templates.InsertAsync(new ExamTemplate
             {
                 PositionId = position.Id,
                 DurationMinutes = seed.DurationMinutes,
-                Questions = questions,
+                Partitions = partitions,
                 LastModifiedAt = now,
                 LastModifiedBy = createdBy,
             }, ct);
 
-            _logger.LogInformation("Seeded position {Name} with {Count} questions.", seed.Name, questions.Count);
+            _logger.LogInformation(
+                "Seeded position {Name} with {PartitionCount} partitions and {QuestionCount} questions.",
+                seed.Name,
+                partitions.Count,
+                questionCount);
         }
     }
 }

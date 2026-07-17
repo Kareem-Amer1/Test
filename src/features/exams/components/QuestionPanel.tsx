@@ -17,6 +17,9 @@ export function QuestionPanel({ question, answer, onChange, readOnly }: Props) {
 
   return (
     <div className="space-y-4">
+      {question.partitionName && (
+        <p className="text-sm font-semibold text-primary">{question.partitionName}</p>
+      )}
       <div className="flex flex-wrap items-center gap-2">
         <Badge variant="secondary">{question.type}</Badge>
         <span className="text-xs text-muted-foreground">{question.points} pts</span>

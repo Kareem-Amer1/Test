@@ -54,7 +54,7 @@ public sealed class PositionService : IPositionService
         {
             PositionId = position.Id,
             DurationMinutes = 60,
-            Questions = new List<TemplateQuestion>(),
+            Partitions = new List<TemplatePartition>(),
             LastModifiedAt = DateTime.UtcNow,
             LastModifiedBy = userId,
         }, ct);

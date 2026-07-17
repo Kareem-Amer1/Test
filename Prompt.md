@@ -78,6 +78,19 @@ for that specific Position.
       - HR marks the correct answer
       - Auto-graded
 
+3. Partitions (visual organization):
+   - Questions inside a Template are grouped into Partitions
+   - Each Partition has a name (e.g. "Soft Skills", "AI", ".NET") and
+     contains related questions
+   - Partitions are NOT fixed — HR or Super Admin creates and names them
+     and decides which questions belong to each one
+   - Partitions are stored in the database (not front-end only)
+   - When adding a question, the user selects which Partition it belongs to
+   - Deleting a Partition cascade-deletes all questions inside it
+   - During the exam, questions are displayed under their Partition header;
+     the Partition name appears with every question
+   - No scoring or grading logic is tied to Partitions — organization only
+
 ### Data Seeding:
 - The system starts with predefined Positions such as:
   (Software Engineer, Sales, IT Support, and others)
@@ -87,9 +100,21 @@ for that specific Position.
 ### Modifying the Template:
 - HR can modify the Template by:
   - Changing the exam duration
-  - Adding a new question (specifying its type and all details)
-  - Deleting an existing question from the Template
+  - Creating, renaming, or deleting Partitions (delete removes all
+    questions in that Partition)
+  - Adding a new question to a chosen Partition (specifying its type
+    and all details)
+  - Deleting or reordering questions within a Partition
 - Any modification affects all HRs since the Template is shared
+
+---
+
+## User Profile (Any authenticated user)
+
+- View account information: email, role, member since
+- Update own full name
+- Change own password (requires current password)
+- Email and role are read-only on the profile screen
 
 ---
 
@@ -104,6 +129,11 @@ for that specific Position.
 
 ### During the Exam:
 - The candidate answers the questions on the HR's device
+- Questions are grouped under Partition headers; each question shows
+  its Partition name
+- The exam session runs full-screen without app navigation (sidebar,
+  back links) — the candidate cannot leave until the exam is submitted
+  (manual submit or timer auto-submit)
 - A countdown timer is displayed
 - When time runs out, the exam is automatically submitted
 - The candidate can also manually submit before time runs out

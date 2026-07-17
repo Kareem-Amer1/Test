@@ -1,6 +1,6 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
-import { MemoryRouter, Route, Routes } from "react-router-dom";
+import { createMemoryRouter, RouterProvider } from "react-router-dom";
 import ExamSessionPage from "@/features/exams/ExamSessionPage";
 
 const mockSubmit = vi.fn();
@@ -35,19 +35,19 @@ const sessionFixture = {
       text: "Describe yourself",
       points: 10,
       order: 0,
+      partitionName: "Soft Skills",
     },
   ],
   answers: [{ questionId: "q1", essayText: "Hello" }],
 };
 
 function renderPage() {
-  return render(
-    <MemoryRouter initialEntries={["/exams/exam-1/session"]}>
-      <Routes>
-        <Route path="/exams/:examId/session" element={<ExamSessionPage />} />
-      </Routes>
-    </MemoryRouter>,
+  const router = createMemoryRouter(
+    [{ path: "/exams/:examId/session", element: <ExamSessionPage /> }],
+    { initialEntries: ["/exams/exam-1/session"] },
   );
+
+  return render(<RouterProvider router={router} />);
 }
 
 describe("ExamSessionPage", () => {
@@ -88,5 +88,17 @@ describe("ExamSessionPage", () => {
     expect(screen.getByRole("button", { name: /previous/i })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /next/i })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /submit exam/i })).toBeInTheDocument();
+  });
+
+  it("shows partition name with every question", () => {
+    vi.mocked(useExamTimer).mockReturnValue({
+      remainingMs: 60_000,
+      isExpired: false,
+      formatted: "01:00",
+    });
+
+    renderPage();
+
+    expect(screen.getByText("Soft Skills")).toBeInTheDocument();
   });
 });

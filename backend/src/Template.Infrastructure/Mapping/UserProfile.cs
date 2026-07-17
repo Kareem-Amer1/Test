@@ -9,6 +9,6 @@ public sealed class UserProfile : Profile
     public UserProfile()
     {
         CreateMap<User, UserResponse>()
-            .ConstructUsing(u => new UserResponse(u.Id, u.Email, u.FullName, u.Role));
+            .ConstructUsing(u => new UserResponse(u.Id, u.Email, u.FullName, u.Role, u.CreatedAt));
     }
 }

@@ -18,6 +18,9 @@ export function ExamReviewQuestion({ question, essayScore, onEssayScoreChange, r
 
   return (
     <div className="rounded-lg border border-app-border-strong bg-card p-5 space-y-4">
+      {question.partitionName && (
+        <p className="text-sm font-semibold text-primary">{question.partitionName}</p>
+      )}
       <div className="flex flex-wrap items-center gap-2">
         <Badge variant="secondary">{question.questionType}</Badge>
         <span className="text-xs text-muted-foreground">{question.points} pts</span>

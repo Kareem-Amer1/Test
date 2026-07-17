@@ -15,8 +15,12 @@ public sealed class ExamTemplate : Entity
     [BsonElement("durationMinutes")]
     public int DurationMinutes { get; set; } = 60;
 
+    /// <summary>Legacy flat list — migrated to <see cref="Partitions"/> on read.</summary>
     [BsonElement("questions")]
     public List<TemplateQuestion> Questions { get; set; } = new();
+
+    [BsonElement("partitions")]
+    public List<TemplatePartition> Partitions { get; set; } = new();
 
     [BsonElement("lastModifiedAt")]
     public DateTime LastModifiedAt { get; set; } = DateTime.UtcNow;

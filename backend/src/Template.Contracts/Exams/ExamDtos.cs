@@ -12,7 +12,9 @@ public sealed record ExamSessionQuestionDto(
     string Text,
     int Points,
     IReadOnlyList<ExamSessionChoiceDto>? Choices,
-    int Order);
+    int Order,
+    string? PartitionId,
+    string? PartitionName);
 
 public sealed record ExamAnswerInputDto(
     string QuestionId,
@@ -51,7 +53,9 @@ public sealed record ExamAnswerReviewDto(
     string CorrectAnswer,
     bool? IsCorrect,
     int? EarnedPoints,
-    bool IsAutoGraded);
+    bool IsAutoGraded,
+    string? PartitionId,
+    string? PartitionName);
 
 public sealed record ExamDetailResponse(
     string Id,

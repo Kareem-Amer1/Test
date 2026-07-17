@@ -27,6 +27,12 @@ public sealed class ExamQuestionSnapshot
 
     [BsonElement("correctChoiceId")]
     public string? CorrectChoiceId { get; set; }
+
+    [BsonElement("partitionId")]
+    public string? PartitionId { get; set; }
+
+    [BsonElement("partitionName")]
+    public string? PartitionName { get; set; }
 }
 
 [BsonIgnoreExtraElements]

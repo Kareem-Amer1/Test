@@ -21,8 +21,8 @@ export function UserMenu() {
   const navigate = useNavigate();
   const { t } = useTranslation();
 
-  const displayName = user?.email || "User";
-  const initials = initialsOf(displayName) || "U";
+  const displayName = user?.fullName || user?.email || "User";
+  const initials = initialsOf(user?.fullName || user?.email || "U") || "U";
 
   return (
     <DropdownMenu>
@@ -36,7 +36,7 @@ export function UserMenu() {
       <DropdownMenuContent align="end" className="w-48">
         <DropdownMenuLabel>{t("user.account", "Account")}</DropdownMenuLabel>
         <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={() => navigate("/settings")}>
+        <DropdownMenuItem onClick={() => navigate("/profile")}>
           <User className="ms-2 h-4 w-4" /> {t("user.profile", "Profile")}
         </DropdownMenuItem>
         <DropdownMenuItem onClick={() => navigate("/settings")}>

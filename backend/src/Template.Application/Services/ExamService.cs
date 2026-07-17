@@ -68,21 +68,26 @@ public sealed class ExamService : IExamService
             return Result<CreateExamResponse>.Failure(ErrorCode.NotFound, "positions.not_found");
 
         var template = await _templates.GetByPositionIdAsync(request.PositionId, ct);
-        if (template is null || template.Questions.Count == 0)
+        if (template is null)
+            return Result<CreateExamResponse>.Failure(ErrorCode.Validation, "exams.template_empty");
+
+        TemplateStructure.EnsurePartitions(template);
+        if (!TemplateStructure.HasQuestions(template))
             return Result<CreateExamResponse>.Failure(ErrorCode.Validation, "exams.template_empty");
 
         var user = await _users.GetByIdAsync(userId, ct);
-        var snapshot = template.Questions
-            .OrderBy(q => q.Order)
-            .Select(q => new ExamQuestionSnapshot
+        var snapshot = TemplateStructure.EnumerateQuestions(template)
+            .Select(pair => new ExamQuestionSnapshot
             {
-                Id = q.Id,
-                Type = q.Type,
-                Text = q.Text,
-                Points = q.Points,
-                Choices = q.Choices?.Select(c => new McqChoice { Id = c.Id, Text = c.Text }).ToList(),
-                CorrectAnswer = q.CorrectAnswer,
-                CorrectChoiceId = q.CorrectChoiceId,
+                Id = pair.Question.Id,
+                Type = pair.Question.Type,
+                Text = pair.Question.Text,
+                Points = pair.Question.Points,
+                Choices = pair.Question.Choices?.Select(c => new McqChoice { Id = c.Id, Text = c.Text }).ToList(),
+                CorrectAnswer = pair.Question.CorrectAnswer,
+                CorrectChoiceId = pair.Question.CorrectChoiceId,
+                PartitionId = pair.Partition.Id,
+                PartitionName = pair.Partition.Name,
             })
             .ToList();
 
@@ -292,7 +297,9 @@ public sealed class ExamService : IExamService
                 q.Text,
                 q.Points,
                 q.Choices?.Select(c => new ExamSessionChoiceDto(c.Id, c.Text)).ToList(),
-                i))
+                i,
+                q.PartitionId,
+                q.PartitionName))
             .ToList();
 
         var answers = exam.Answers.Select(a => new ExamAnswerInputDto(
@@ -331,7 +338,9 @@ public sealed class ExamService : IExamService
                     ExamGrading.FormatCorrectAnswer(q),
                     isCorrect,
                     ExamGrading.GetEarnedPoints(exam, q.Id),
-                    q.Type != QuestionTypes.Essay);
+                    q.Type != QuestionTypes.Essay,
+                    q.PartitionId,
+                    q.PartitionName);
             })
             .OrderBy(q => q.Order)
             .ToList();

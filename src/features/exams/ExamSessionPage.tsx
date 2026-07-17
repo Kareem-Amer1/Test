@@ -1,18 +1,18 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { Link, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { ArrowLeft, ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useExamSession, useSaveExamAnswers, useSubmitExam } from "./useExams";
 import { useExamTimer } from "./useExamTimer";
+import { useExamLockdown } from "./useExamLockdown";
 import { ExamTimerDisplay } from "./components/ExamTimerDisplay";
 import { QuestionPanel } from "./components/QuestionPanel";
 import type { ExamAnswerInput } from "./exams.types";
 
 export default function ExamSessionPage() {
-  const { t } = useTranslation();
-  const navigate = useNavigate();
+  const { t, i18n } = useTranslation();
   const { examId = "" } = useParams<{ examId: string }>();
   const { data: session, isLoading, isError, error, refetch } = useExamSession(examId);
   const saveAnswers = useSaveExamAnswers(examId);
@@ -26,6 +26,10 @@ export default function ExamSessionPage() {
   const answersInitialized = useRef<string | null>(null);
 
   const inProgress = session?.status === "InProgress";
+  const dir = i18n.language === "ar" ? "rtl" : "ltr";
+
+  useExamLockdown(!!session && inProgress);
+
   const { remainingMs, isExpired, formatted } = useExamTimer(
     session?.startedAt,
     session?.durationMinutes,
@@ -120,18 +124,24 @@ export default function ExamSessionPage() {
       if (!pendingAnswers.current || !inProgress) return;
       void flushPendingSave();
     };
-    window.addEventListener("beforeunload", onLeave);
-    return () => window.removeEventListener("beforeunload", onLeave);
+    window.addEventListener("pagehide", onLeave);
+    return () => window.removeEventListener("pagehide", onLeave);
   }, [flushPendingSave, inProgress]);
 
+  const shell = (content: ReactNode) => (
+    <div data-theme="dashboard" dir={dir} className="min-h-screen bg-muted/30 px-4 py-8">
+      <div className="mx-auto max-w-3xl">{content}</div>
+    </div>
+  );
+
   if (isLoading) {
-    return <p className="text-sm text-muted-foreground">{t("common.loading", "Loading…")}</p>;
+    return shell(<p className="text-sm text-muted-foreground">{t("common.loading", "Loading…")}</p>);
   }
 
   if (isError || !session) {
     const apiError = error as (Error & { code?: string; status?: number }) | undefined;
     const forbidden = apiError?.code === "exams.forbidden" || apiError?.status === 403;
-    return (
+    return shell(
       <div className="space-y-2">
         <p className="text-sm text-destructive">
           {forbidden
@@ -139,12 +149,12 @@ export default function ExamSessionPage() {
             : t("exams.loadError", "Failed to load exam.")}
         </p>
         <Button variant="outline" size="sm" onClick={() => refetch()}>{t("common.retry", "Retry")}</Button>
-      </div>
+      </div>,
     );
   }
 
   if (session.status === "Submitted" || session.status === "Graded") {
-    return (
+    return shell(
       <div className="max-w-lg mx-auto text-center space-y-4 py-12">
         <h1 className="text-2xl font-semibold">{t("exams.completeTitle", "Exam complete")}</h1>
         <p className="text-muted-foreground">
@@ -164,20 +174,19 @@ export default function ExamSessionPage() {
             <Link to="/positions">{t("exams.backToPositions", "Back to positions")}</Link>
           </Button>
         </div>
-      </div>
+      </div>,
     );
   }
 
-  return (
-    <div className="space-y-6 max-w-3xl mx-auto">
+  return shell(
+    <div className="space-y-6">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <Button variant="ghost" size="sm" className="-ms-2 mb-2" onClick={() => navigate("/positions")}>
-            <ArrowLeft className="h-4 w-4 me-1" />
-            {t("common.back", "Back")}
-          </Button>
           <h1 className="text-xl font-semibold">{session.candidateName}</h1>
           <p className="text-sm text-muted-foreground">{session.positionName}</p>
+          <p className="text-xs text-muted-foreground mt-2">
+            {t("exams.lockdownHint", "Submit the exam to finish. Navigation away is disabled.")}
+          </p>
         </div>
         <ExamTimerDisplay
           formatted={formatted}
@@ -239,6 +248,6 @@ export default function ExamSessionPage() {
           {t("exams.submit", "Submit exam")}
         </Button>
       </div>
-    </div>
+    </div>,
   );
 }

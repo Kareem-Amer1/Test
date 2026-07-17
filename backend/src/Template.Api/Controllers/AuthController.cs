@@ -49,6 +49,24 @@ public sealed class AuthController : ControllerBase
         return (await _auth.GetMeAsync(userId, ct)).ToActionResult(_loc);
     }
 
+    /// <summary>Update the authenticated user's profile.</summary>
+    [HttpPut("me")]
+    [ProducesResponseType(typeof(ApiResponse<UserResponse>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> UpdateMe([FromBody] UpdateProfileRequest request, CancellationToken ct)
+    {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue("sub") ?? string.Empty;
+        return (await _auth.UpdateProfileAsync(userId, request, ct)).ToActionResult(_loc);
+    }
+
+    /// <summary>Change the authenticated user's password.</summary>
+    [HttpPut("me/password")]
+    [ProducesResponseType(typeof(ApiResponse<bool>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequest request, CancellationToken ct)
+    {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue("sub") ?? string.Empty;
+        return (await _auth.ChangePasswordAsync(userId, request, ct)).ToActionResult(_loc);
+    }
+
     /// <summary>Revoke all active refresh tokens for the caller.</summary>
     [HttpPost("logout")]
     [ProducesResponseType(typeof(ApiResponse<bool>), StatusCodes.Status200OK)]

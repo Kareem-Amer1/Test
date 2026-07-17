@@ -24,17 +24,28 @@ export interface TemplateQuestion {
   order: number;
 }
 
+export interface TemplatePartition {
+  id: string;
+  name: string;
+  order: number;
+  questions: TemplateQuestion[];
+}
+
 export interface ExamTemplate {
   id: string;
   positionId: string;
   durationMinutes: number;
-  questions: TemplateQuestion[];
+  partitions: TemplatePartition[];
   lastModifiedAt: string;
 }
 
 export interface CreatePositionDto {
   name: string;
   description?: string;
+}
+
+export interface UpsertPartitionDto {
+  name: string;
 }
 
 export interface UpsertQuestionDto {

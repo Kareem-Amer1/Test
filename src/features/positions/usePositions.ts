@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { positionsApi } from "./positions.api";
-import type { CreatePositionDto, UpsertQuestionDto } from "./positions.types";
+import type { CreatePositionDto, UpsertPartitionDto, UpsertQuestionDto } from "./positions.types";
 
 export const POSITIONS_KEY = ["positions"] as const;
 export const templateKey = (positionId: string) => ["positions", positionId, "template"] as const;
@@ -45,35 +45,62 @@ export function useUpdateDuration(positionId: string) {
   });
 }
 
-export function useAddQuestion(positionId: string) {
+export function useAddPartition(positionId: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (dto: UpsertQuestionDto) => positionsApi.addQuestion(positionId, dto),
+    mutationFn: (dto: UpsertPartitionDto) => positionsApi.addPartition(positionId, dto),
     onSuccess: (data) => qc.setQueryData(templateKey(positionId), data),
   });
 }
 
-export function useUpdateQuestion(positionId: string) {
+export function useUpdatePartition(positionId: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ questionId, dto }: { questionId: string; dto: UpsertQuestionDto }) =>
-      positionsApi.updateQuestion(positionId, questionId, dto),
+    mutationFn: ({ partitionId, dto }: { partitionId: string; dto: UpsertPartitionDto }) =>
+      positionsApi.updatePartition(positionId, partitionId, dto),
     onSuccess: (data) => qc.setQueryData(templateKey(positionId), data),
   });
 }
 
-export function useDeleteQuestion(positionId: string) {
+export function useDeletePartition(positionId: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (questionId: string) => positionsApi.deleteQuestion(positionId, questionId),
+    mutationFn: (partitionId: string) => positionsApi.deletePartition(positionId, partitionId),
     onSuccess: () => qc.invalidateQueries({ queryKey: templateKey(positionId) }),
   });
 }
 
-export function useReorderQuestions(positionId: string) {
+export function useAddQuestion(positionId: string, partitionId: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (questionIds: string[]) => positionsApi.reorderQuestions(positionId, questionIds),
+    mutationFn: (dto: UpsertQuestionDto) => positionsApi.addQuestion(positionId, partitionId, dto),
+    onSuccess: (data) => qc.setQueryData(templateKey(positionId), data),
+  });
+}
+
+export function useUpdateQuestion(positionId: string, partitionId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ questionId, dto }: { questionId: string; dto: UpsertQuestionDto }) =>
+      positionsApi.updateQuestion(positionId, partitionId, questionId, dto),
+    onSuccess: (data) => qc.setQueryData(templateKey(positionId), data),
+  });
+}
+
+export function useDeleteQuestion(positionId: string, partitionId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (questionId: string) =>
+      positionsApi.deleteQuestion(positionId, partitionId, questionId),
+    onSuccess: () => qc.invalidateQueries({ queryKey: templateKey(positionId) }),
+  });
+}
+
+export function useReorderQuestions(positionId: string, partitionId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (questionIds: string[]) =>
+      positionsApi.reorderQuestions(positionId, partitionId, questionIds),
     onSuccess: (data) => qc.setQueryData(templateKey(positionId), data),
   });
 }

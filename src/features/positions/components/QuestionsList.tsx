@@ -15,15 +15,16 @@ import { QuestionFormDialog } from "./QuestionFormDialog";
 
 interface Props {
   positionId: string;
+  partitionId: string;
   questions: TemplateQuestion[];
 }
 
-export function QuestionsList({ positionId, questions }: Props) {
+export function QuestionsList({ positionId, partitionId, questions }: Props) {
   const { t } = useTranslation();
-  const addQuestion = useAddQuestion(positionId);
-  const updateQuestion = useUpdateQuestion(positionId);
-  const deleteQuestion = useDeleteQuestion(positionId);
-  const reorder = useReorderQuestions(positionId);
+  const addQuestion = useAddQuestion(positionId, partitionId);
+  const updateQuestion = useUpdateQuestion(positionId, partitionId);
+  const deleteQuestion = useDeleteQuestion(positionId, partitionId);
+  const reorder = useReorderQuestions(positionId, partitionId);
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<TemplateQuestion | null>(null);
@@ -73,10 +74,9 @@ export function QuestionsList({ positionId, questions }: Props) {
   };
 
   return (
-    <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <h2 className="text-lg font-semibold">{t("templates.questions", "Questions")}</h2>
-        <Button size="sm" onClick={openAdd}>
+    <div className="space-y-3">
+      <div className="flex justify-end">
+        <Button size="sm" variant="outline" onClick={openAdd}>
           <Plus className="h-4 w-4 me-1" />
           {t("templates.addQuestion", "Add question")}
         </Button>

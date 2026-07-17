@@ -72,8 +72,54 @@ public sealed class AuthService : IAuthService
         if (user is null || !user.IsActive)
             return Result<UserResponse>.Failure(ErrorCode.Unauthorized, "auth.unauthorized");
 
-        return Result<UserResponse>.Success(new UserResponse(user.Id, user.Email, user.FullName, user.Role));
+        return Result<UserResponse>.Success(MapUser(user));
     }
+
+    public async Task<Result<UserResponse>> UpdateProfileAsync(
+        string userId, UpdateProfileRequest request, CancellationToken ct = default)
+    {
+        if (string.IsNullOrWhiteSpace(userId))
+            return Result<UserResponse>.Failure(ErrorCode.Unauthorized, "auth.unauthorized");
+
+        var fullName = request.FullName?.Trim() ?? string.Empty;
+        if (fullName.Length < 2)
+            return Result<UserResponse>.Failure(ErrorCode.Validation, "users.full_name_required");
+
+        var user = await _users.GetByIdAsync(userId, ct);
+        if (user is null || !user.IsActive)
+            return Result<UserResponse>.Failure(ErrorCode.Unauthorized, "auth.unauthorized");
+
+        user.FullName = fullName;
+        await _users.ReplaceAsync(user, ct);
+        return Result<UserResponse>.Success(MapUser(user));
+    }
+
+    public async Task<Result<bool>> ChangePasswordAsync(
+        string userId, ChangePasswordRequest request, CancellationToken ct = default)
+    {
+        if (string.IsNullOrWhiteSpace(userId))
+            return Result<bool>.Failure(ErrorCode.Unauthorized, "auth.unauthorized");
+
+        if (string.IsNullOrEmpty(request.CurrentPassword) || string.IsNullOrEmpty(request.NewPassword))
+            return Result<bool>.Failure(ErrorCode.Validation, "auth.password_required");
+
+        if (!Guard.IsStrongEnoughPassword(request.NewPassword))
+            return Result<bool>.Failure(ErrorCode.Validation, "auth.password_too_short");
+
+        var user = await _users.GetByIdAsync(userId, ct);
+        if (user is null || !user.IsActive)
+            return Result<bool>.Failure(ErrorCode.Unauthorized, "auth.unauthorized");
+
+        if (!_hasher.Verify(request.CurrentPassword, user.PasswordHash))
+            return Result<bool>.Failure(ErrorCode.Validation, "auth.current_password_invalid");
+
+        user.PasswordHash = _hasher.Hash(request.NewPassword);
+        await _users.ReplaceAsync(user, ct);
+        return Result<bool>.Success(true);
+    }
+
+    private static UserResponse MapUser(User user) =>
+        new(user.Id, user.Email, user.FullName, user.Role, user.CreatedAt);
 
     private async Task<Result<AuthTokensResponse>> IssueAsync(User user, CancellationToken ct)
     {

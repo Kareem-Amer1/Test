@@ -25,6 +25,8 @@ export interface ExamSessionQuestion {
   points: number;
   choices?: ExamSessionChoice[] | null;
   order: number;
+  partitionId?: string | null;
+  partitionName?: string | null;
 }
 
 export interface ExamAnswerInput {
@@ -89,6 +91,8 @@ export interface ExamAnswerReview {
   isCorrect?: boolean | null;
   earnedPoints?: number | null;
   isAutoGraded: boolean;
+  partitionId?: string | null;
+  partitionName?: string | null;
 }
 
 export interface ExamDetail {

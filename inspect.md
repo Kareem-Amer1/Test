@@ -75,24 +75,32 @@ One-to-one with Position. Separated to keep history clean.
   _id: ObjectId,
   positionId: ObjectId,
   durationMinutes: int,
-  questions: [
+  partitions: [
     {
-      id: string (GUID — stable identifier for each question),
-      type: "Essay" | "TrueFalse" | "MCQ",
-      text: string,
-      points: int,
-      // TrueFalse only:
-      correctAnswer: boolean (nullable),
-      // MCQ only:
-      choices: [{ id: string, text: string }] (nullable),
-      correctChoiceId: string (nullable),
-      order: int
+      id: string (GUID),
+      name: string,
+      order: int,
+      questions: [
+        {
+          id: string (GUID — stable identifier for each question),
+          type: "Essay" | "TrueFalse" | "MCQ",
+          text: string,
+          points: int,
+          correctAnswer: boolean (nullable),
+          choices: [{ id: string, text: string }] (nullable),
+          correctChoiceId: string (nullable),
+          order: int
+        }
+      ]
     }
   ],
   lastModifiedAt: DateTime,
   lastModifiedBy: ObjectId
 }
 ```
+
+Legacy templates may still have a flat `questions[]` array in MongoDB;
+the application migrates them to a single default Partition on read.
 
 ### 4. `exams`
 
@@ -118,7 +126,9 @@ Immutable once submitted. Contains a full snapshot of questions.
       points: int,
       choices: [{ id: string, text: string }] (nullable, MCQ only),
       correctAnswer: boolean (nullable, TrueFalse — server-only, never sent to candidate),
-      correctChoiceId: string (nullable, MCQ — server-only, never sent to candidate)
+      correctChoiceId: string (nullable, MCQ — server-only, never sent to candidate),
+      partitionId: string (nullable — for display grouping),
+      partitionName: string (nullable — snapshot at exam creation)
     }
   ],
   answers: [
@@ -183,9 +193,9 @@ src/ (frontend)
 │   ├── auth/             (login page, useAuth)
 │   ├── dashboard/        (landing page with stats)
 │   ├── users/            (Super Admin: manage HR accounts)
-│   ├── positions/        (manage positions + templates)
-│   ├── exams/            (create exam, exam list, exam detail/grading)
-│   └── exam-session/     (candidate-facing exam UI with timer)
+│   ├── positions/        (manage positions + templates + partitions)
+│   ├── exams/            (create exam, exam list, exam detail/grading, lockdown session)
+│   └── profile/          (view/update profile, change password)
 └── components/           (shared UI components)
 ```
 
@@ -210,35 +220,42 @@ src/ (frontend)
 10. Delete Position (with validation — handle exams referencing it)
 
 ### Template Management (Any authenticated user)
-11. View Template for a Position (questions + duration)
+11. View Template for a Position (partitions, questions + duration)
 12. Update exam duration
-13. Add a question (Essay / TrueFalse / MCQ) with all details
-14. Delete a question from the Template
-15. Reorder questions
+13. Create, rename, and delete Partitions (cascade delete questions)
+14. Add a question to a Partition (Essay / TrueFalse / MCQ) with all details
+15. Update or delete a question within a Partition
+16. Reorder questions within a Partition
+
+### User Profile (Any authenticated user)
+17. View own profile (email, role, member since)
+18. Update own full name
+19. Change own password
 
 ### Exam Lifecycle
-16. Create a new exam (select Position + enter candidate name)
-17. Load exam session (candidate-facing, with timer countdown)
-18. Auto-submit on timer expiry
-19. Manual submit before time runs out
-20. Auto-grade MCQ and TrueFalse questions upon submission
-21. Calculate auto-graded score
+20. Create a new exam (select Position + enter candidate name)
+21. Load exam session (candidate-facing, lockdown UI, partition labels, timer)
+22. Block navigation away from session until submit
+23. Auto-submit on timer expiry
+24. Manual submit before time runs out
+25. Auto-grade MCQ and TrueFalse questions upon submission
+26. Calculate auto-graded score
 
 ### Exam Review & Grading (HR / Super Admin)
-22. List exams (HR: own only, Admin: all — filterable by Position, status, date)
-23. View exam detail with full review:
+27. List exams (HR: own only, Admin: all — filterable by Position, status, date, search)
+28. View exam detail with full review (partition labels per question):
     - Candidate's answer for each question
     - Whether the answer is correct or wrong (for MCQ & TrueFalse)
     - The correct answer displayed alongside wrong answers
     - Score per question
-24. Grade essay questions (assign score per question)
-25. Finalize grading (mark exam as fully graded, compute total)
+29. Grade essay questions (assign score per question)
+30. Finalize grading (mark exam as fully graded, compute total)
 
 ### Data Seeding
-26. Seed endpoint/service for predefined Positions + Templates (Software Engineer, Sales, IT Support, etc.)
+31. Seed endpoint/service for predefined Positions + Partitions + Templates
 
 ### Dashboard
-27. Summary stats (total exams, pending grading, exams per position)
+32. Summary stats (total exams, pending grading, exams per position)
 
 ---
 
@@ -248,8 +265,11 @@ src/ (frontend)
 
 | Method | Endpoint | Description |
 |---|---|---|
-| POST | `/api/auth/login` | Login, returns JWT |
-| GET | `/api/auth/me` | Get current user profile |
+| POST | `/api/v1/auth/login` | Login, returns JWT |
+| GET | `/api/v1/auth/me` | Get current user profile |
+| PUT | `/api/v1/auth/me` | Update own full name |
+| PUT | `/api/v1/auth/me/password` | Change own password |
+| POST | `/api/v1/auth/logout` | Revoke refresh tokens |
 
 ### Users (Super Admin only)
 
@@ -271,12 +291,15 @@ src/ (frontend)
 
 | Method | Endpoint | Description |
 |---|---|---|
-| GET | `/api/positions/{positionId}/template` | Get template for a position |
-| PUT | `/api/positions/{positionId}/template/duration` | Update exam duration |
-| POST | `/api/positions/{positionId}/template/questions` | Add a question |
-| PUT | `/api/positions/{positionId}/template/questions/{questionId}` | Update a question |
-| DELETE | `/api/positions/{positionId}/template/questions/{questionId}` | Delete a question |
-| PUT | `/api/positions/{positionId}/template/questions/reorder` | Reorder questions |
+| GET | `/api/v1/positions/{positionId}/template` | Get template for a position |
+| PUT | `/api/v1/positions/{positionId}/template/duration` | Update exam duration |
+| POST | `/api/v1/positions/{positionId}/template/partitions` | Create partition |
+| PUT | `/api/v1/positions/{positionId}/template/partitions/{partitionId}` | Rename partition |
+| DELETE | `/api/v1/positions/{positionId}/template/partitions/{partitionId}` | Delete partition (cascade questions) |
+| POST | `/api/v1/positions/{positionId}/template/partitions/{partitionId}/questions` | Add question to partition |
+| PUT | `/api/v1/positions/{positionId}/template/partitions/{partitionId}/questions/{questionId}` | Update question |
+| DELETE | `/api/v1/positions/{positionId}/template/partitions/{partitionId}/questions/{questionId}` | Delete question |
+| PUT | `/api/v1/positions/{positionId}/template/partitions/{partitionId}/questions/reorder` | Reorder questions within partition |
 
 ### Exams
 
@@ -391,7 +414,28 @@ public class ExamAnswerReviewDto
 
 ### Phase 6 — Polish & Testing
 - End-to-end flow testing
-- xUnit tests for grading logic and authorization
-- Vitest tests for timer logic and exam session
+- xUnit tests for grading logic, authorization, partitions, and profile
+- Vitest tests for timer logic, exam session lockdown, and partition display
 - RTL/i18n verification
 - Final cleanup and documentation
+
+### Post–Phase 6 enhancements (implemented)
+
+#### Template Partitions
+- Questions grouped into named Partitions (DB-stored, user-defined)
+- Partition CRUD with cascade delete of contained questions
+- Question CRUD scoped to a Partition; reorder within Partition
+- Exam snapshot stores `partitionId` / `partitionName` for display
+- Seed data uses sample Partitions (e.g. Soft Skills, .NET)
+
+#### Exam session lockdown
+- Session route rendered outside AppShell (no sidebar/top nav)
+- `useBlocker` prevents in-app navigation until submit
+- `beforeunload` warns on tab close during an in-progress exam
+- Partition name shown on every question during session and review
+
+#### User profile (`/profile`)
+- View email, role, member since
+- Update full name (`PUT /api/v1/auth/me`)
+- Change password (`PUT /api/v1/auth/me/password`)
+- Accessible from the user menu
