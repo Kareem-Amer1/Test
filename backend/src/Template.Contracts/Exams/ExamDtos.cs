@@ -38,7 +38,7 @@ public sealed record ExamListItemDto(
     bool IsFullyGraded,
     string ConductedByName);
 
-public sealed record ExamListQueryDto(string? PositionId, string? Status, DateTime? From, DateTime? To);
+public sealed record ExamListQueryDto(string? PositionId, string? Status, DateTime? From, DateTime? To, string? Search);
 
 public sealed record ExamAnswerReviewDto(
     string QuestionId,

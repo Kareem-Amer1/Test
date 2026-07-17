@@ -9,5 +9,17 @@
   "projects.not_found": "المشروع غير موجود.",
   "projects.name_required": "اسم المشروع مطلوب.",
   "projects.update_failed": "تعذر تحديث المشروع.",
-  "common.unexpected": "حدث خطأ غير متوقع."
+  "common.unexpected": "حدث خطأ غير متوقع.",
+  "users.full_name_required": "الاسم الكامل مطلوب.",
+  "users.id_required": "معرف المستخدم مطلوب.",
+  "users.not_found": "المستخدم غير موجود.",
+  "users.cannot_deactivate_self": "لا يمكنك إلغاء تفعيل حسابك.",
+  "users.hr_only": "يمكن إلغاء تفعيل حسابات الموارد البشرية فقط من هذه الشاشة.",
+  "positions.name_required": "اسم الوظيفة مطلوب.",
+  "positions.id_required": "معرف الوظيفة مطلوب.",
+  "positions.not_found": "الوظيفة غير موجود.",
+  "positions.has_exams": "لا يمكن حذف وظيفة مرتبطة بامتحانات.",
+  "exams.not_found": "الامتحان غير موجود.",
+  "exams.forbidden": "ليس لديك صلاحية الوصول إلى هذا الامتحان.",
+  "exams.still_in_progress": "هذا الامتحان لا يزال قيد التنفيذ."
 }

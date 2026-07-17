@@ -1,9 +1,10 @@
 import { useTranslation } from "react-i18next";
 import { useAuth } from "@/hooks/useAuth";
+import DashboardStatsPanel from "@/features/dashboard/components/DashboardStatsPanel";
 
 export default function Dashboard() {
   const { t } = useTranslation();
-  const { user, isSuperAdmin } = useAuth();
+  const { user } = useAuth();
 
   return (
     <div className="space-y-6">
@@ -14,31 +15,7 @@ export default function Dashboard() {
         </p>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <div className="rounded-lg border border-app-border-strong bg-card p-5">
-          <p className="text-xs text-muted-foreground uppercase tracking-wide">{t("dashboard.role", "Role")}</p>
-          <p className="text-lg font-semibold mt-1">{user?.role}</p>
-        </div>
-        <div className="rounded-lg border border-app-border-strong bg-card p-5">
-          <p className="text-xs text-muted-foreground uppercase tracking-wide">{t("dashboard.email", "Email")}</p>
-          <p className="text-lg font-semibold mt-1 truncate">{user?.email}</p>
-        </div>
-        <div className="rounded-lg border border-app-border-strong bg-card p-5">
-          <p className="text-xs text-muted-foreground uppercase tracking-wide">{t("dashboard.access", "Access")}</p>
-          <p className="text-lg font-semibold mt-1">
-            {isSuperAdmin
-              ? t("dashboard.superAdminAccess", "All exams & HR management")
-              : t("dashboard.hrAccess", "Conduct & review your exams")}
-          </p>
-        </div>
-      </div>
-
-      <div className="rounded-lg border border-dashed border-app-border-strong bg-muted/30 p-6 text-sm text-muted-foreground">
-        {t(
-          "dashboard.phase3Note",
-          "Go to Positions and click Start exam to conduct a candidate interview session.",
-        )}
-      </div>
+      <DashboardStatsPanel />
     </div>
   );
 }

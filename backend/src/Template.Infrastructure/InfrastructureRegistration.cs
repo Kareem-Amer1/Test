@@ -30,9 +30,11 @@ public static class InfrastructureRegistration
         services.AddScoped<IExamRepository, ExamRepository>();
 
         services.AddScoped<IAuthService, AuthService>();
+        services.AddScoped<IUserService, UserService>();
         services.AddScoped<IPositionService, PositionService>();
         services.AddScoped<ITemplateService, TemplateService>();
         services.AddScoped<IExamService, ExamService>();
+        services.AddScoped<IDashboardService, DashboardService>();
         services.AddScoped<ISeedService, SeedService>();
 
         services.AddAutoMapper(typeof(UserProfile));

@@ -74,6 +74,7 @@ export interface ExamListFilters {
   status?: ExamStatus | "";
   from?: string;
   to?: string;
+  search?: string;
 }
 
 export interface ExamAnswerReview {

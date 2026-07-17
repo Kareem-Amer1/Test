@@ -20,8 +20,23 @@ public sealed class UserRepository : IUserRepository
     public Task<User?> GetByIdAsync(string id, CancellationToken ct = default) =>
         _col.Find(u => u.Id == id).FirstOrDefaultAsync(ct)!;
 
+    public async Task<IReadOnlyList<User>> ListByRoleAsync(string role, CancellationToken ct = default)
+    {
+        var items = await _col.Find(u => u.Role == role)
+            .SortByDescending(u => u.CreatedAt)
+            .ToListAsync(ct);
+        return items;
+    }
+
     public Task InsertAsync(User user, CancellationToken ct = default) =>
         _col.InsertOneAsync(user, cancellationToken: ct);
+
+    public async Task<bool> ReplaceAsync(User user, CancellationToken ct = default)
+    {
+        user.UpdatedAt = DateTime.UtcNow;
+        var r = await _col.ReplaceOneAsync(u => u.Id == user.Id, user, cancellationToken: ct);
+        return r.MatchedCount > 0;
+    }
 
     public async Task<bool> ExistsWithRoleAsync(string role, CancellationToken ct = default)
     {

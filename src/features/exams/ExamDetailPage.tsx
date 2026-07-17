@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, Navigate, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -13,7 +13,7 @@ import type { EssayScoreInput } from "./exams.types";
 export default function ExamDetailPage() {
   const { t } = useTranslation();
   const { examId = "" } = useParams<{ examId: string }>();
-  const { data: exam, isLoading, isError, refetch } = useExamDetail(examId);
+  const { data: exam, isLoading, isError, error, refetch } = useExamDetail(examId);
   const gradeExam = useGradeExam(examId);
 
   const essayQuestions = useMemo(
@@ -56,10 +56,20 @@ export default function ExamDetailPage() {
     return <p className="text-sm text-muted-foreground">{t("common.loading", "Loading…")}</p>;
   }
 
+  const apiError = error as (Error & { code?: string; status?: number }) | undefined;
+  if (apiError?.code === "exams.still_in_progress" || apiError?.status === 409) {
+    return <Navigate to={`/exams/${examId}/session`} replace />;
+  }
+
   if (isError || !exam) {
+    const forbidden = apiError?.code === "exams.forbidden" || apiError?.status === 403;
     return (
       <div className="space-y-2">
-        <p className="text-sm text-destructive">{t("exams.detailError", "Failed to load exam.")}</p>
+        <p className="text-sm text-destructive">
+          {forbidden
+            ? t("exams.forbidden", "You do not have access to this exam.")
+            : t("exams.detailError", "Failed to load exam.")}
+        </p>
         <Button variant="outline" size="sm" onClick={() => refetch()}>{t("common.retry", "Retry")}</Button>
       </div>
     );

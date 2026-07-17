@@ -9,5 +9,17 @@
   "projects.not_found": "Project not found.",
   "projects.name_required": "Project name is required.",
   "projects.update_failed": "Failed to update project.",
-  "common.unexpected": "An unexpected error occurred."
+  "common.unexpected": "An unexpected error occurred.",
+  "users.full_name_required": "Full name is required.",
+  "users.id_required": "User id is required.",
+  "users.not_found": "User not found.",
+  "users.cannot_deactivate_self": "You cannot deactivate your own account.",
+  "users.hr_only": "Only HR accounts can be deactivated from this screen.",
+  "positions.name_required": "Position name is required.",
+  "positions.id_required": "Position id is required.",
+  "positions.not_found": "Position not found.",
+  "positions.has_exams": "Cannot delete a position that has exams.",
+  "exams.not_found": "Exam not found.",
+  "exams.forbidden": "You do not have access to this exam.",
+  "exams.still_in_progress": "This exam is still in progress."
 }

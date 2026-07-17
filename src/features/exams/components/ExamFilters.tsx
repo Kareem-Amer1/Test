@@ -24,6 +24,15 @@ export function ExamFilters({ filters, positions, onChange }: Props) {
 
   return (
     <div className="flex flex-wrap items-end gap-3 rounded-lg border border-app-border-strong p-4">
+      <div className="space-y-1.5 min-w-[180px] flex-1">
+        <Label>{t("exams.searchCandidate", "Search candidate")}</Label>
+        <Input
+          value={filters.search ?? ""}
+          onChange={(e) => onChange({ ...filters, search: e.target.value || undefined })}
+          placeholder={t("exams.searchPlaceholder", "Candidate name…")}
+        />
+      </div>
+
       <div className="space-y-1.5 min-w-[160px]">
         <Label>{t("exams.position", "Position")}</Label>
         <Select

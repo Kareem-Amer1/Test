@@ -31,6 +31,10 @@ builder.Services
     .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
+        // Keep JWT claim names as issued ("role", "sub"). Without this, inbound
+        // claims are remapped to legacy URIs and RequireRole("SuperAdmin") 403s.
+        options.MapInboundClaims = false;
+
         var jwt = config.GetSection(JwtOptions.Section).Get<JwtOptions>() ?? new JwtOptions();
         SecurityKey signingKey;
         if (!string.IsNullOrWhiteSpace(jwt.PublicKeyPem))

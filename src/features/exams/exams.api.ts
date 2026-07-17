@@ -19,6 +19,7 @@ function buildListQuery(filters?: ExamListFilters): string {
   if (filters.status) params.set("status", filters.status);
   if (filters.from) params.set("from", filters.from);
   if (filters.to) params.set("to", filters.to);
+  if (filters.search?.trim()) params.set("search", filters.search.trim());
   const qs = params.toString();
   return qs ? `?${qs}` : "";
 }

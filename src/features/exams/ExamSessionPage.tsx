@@ -14,7 +14,7 @@ export default function ExamSessionPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { examId = "" } = useParams<{ examId: string }>();
-  const { data: session, isLoading, isError, refetch } = useExamSession(examId);
+  const { data: session, isLoading, isError, error, refetch } = useExamSession(examId);
   const saveAnswers = useSaveExamAnswers(examId);
   const submitExam = useSubmitExam(examId);
 
@@ -129,9 +129,15 @@ export default function ExamSessionPage() {
   }
 
   if (isError || !session) {
+    const apiError = error as (Error & { code?: string; status?: number }) | undefined;
+    const forbidden = apiError?.code === "exams.forbidden" || apiError?.status === 403;
     return (
       <div className="space-y-2">
-        <p className="text-sm text-destructive">{t("exams.loadError", "Failed to load exam.")}</p>
+        <p className="text-sm text-destructive">
+          {forbidden
+            ? t("exams.forbidden", "You do not have access to this exam.")
+            : t("exams.loadError", "Failed to load exam.")}
+        </p>
         <Button variant="outline" size="sm" onClick={() => refetch()}>{t("common.retry", "Retry")}</Button>
       </div>
     );

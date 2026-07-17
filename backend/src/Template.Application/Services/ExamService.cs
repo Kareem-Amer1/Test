@@ -41,11 +41,12 @@ public sealed class ExamService : IExamService
     {
         var filter = new ExamListFilter
         {
-            ConductedBy = role == UserRoles.SuperAdmin ? null : userId,
+            ConductedBy = UserIdentity.IsSuperAdmin(role) ? null : userId,
             PositionId = query?.PositionId,
             Status = query?.Status,
             From = query?.From,
             To = query?.To,
+            Search = query?.Search,
         };
 
         var exams = await _exams.ListAsync(filter, ct);
@@ -55,6 +56,9 @@ public sealed class ExamService : IExamService
 
     public async Task<Result<CreateExamResponse>> CreateAsync(string userId, CreateExamRequest request, CancellationToken ct = default)
     {
+        if (string.IsNullOrWhiteSpace(userId))
+            return Result<CreateExamResponse>.Failure(ErrorCode.Unauthorized, "auth.unauthorized");
+
         var candidateName = request.CandidateName?.Trim() ?? string.Empty;
         if (candidateName.Length < 2)
             return Result<CreateExamResponse>.Failure(ErrorCode.Validation, "exams.candidate_name_required");
@@ -106,30 +110,38 @@ public sealed class ExamService : IExamService
 
     public async Task<Result<ExamSessionResponse>> GetSessionAsync(string examId, string userId, string role, CancellationToken ct = default)
     {
-        var exam = await LoadAuthorizedAsync(examId, userId, role, ct);
-        if (exam is null)
+        var access = await LoadAuthorizedAsync(examId, userId, role, ct);
+        if (access.AccessDenied)
+            return Result<ExamSessionResponse>.Failure(ErrorCode.Forbidden, "exams.forbidden");
+        if (access.Exam is null)
             return Result<ExamSessionResponse>.Failure(ErrorCode.NotFound, "exams.not_found");
 
-        return Result<ExamSessionResponse>.Success(MapSession(exam));
+        return Result<ExamSessionResponse>.Success(MapSession(access.Exam));
     }
 
     public async Task<Result<ExamDetailResponse>> GetDetailAsync(string examId, string userId, string role, CancellationToken ct = default)
     {
-        var exam = await LoadAuthorizedAsync(examId, userId, role, ct);
-        if (exam is null)
+        var access = await LoadAuthorizedAsync(examId, userId, role, ct);
+        if (access.AccessDenied)
+            return Result<ExamDetailResponse>.Failure(ErrorCode.Forbidden, "exams.forbidden");
+        if (access.Exam is null)
             return Result<ExamDetailResponse>.Failure(ErrorCode.NotFound, "exams.not_found");
-        if (exam.Status == ExamStatuses.InProgress)
+        if (access.Exam.Status == ExamStatuses.InProgress)
             return Result<ExamDetailResponse>.Failure(ErrorCode.Conflict, "exams.still_in_progress");
 
-        return Result<ExamDetailResponse>.Success(MapDetail(exam));
+        return Result<ExamDetailResponse>.Success(MapDetail(access.Exam));
     }
 
     public async Task<Result<ExamSessionResponse>> SaveAnswersAsync(
         string examId, string userId, string role, SaveAnswersRequest request, CancellationToken ct = default)
     {
-        var exam = await LoadAuthorizedAsync(examId, userId, role, ct);
-        if (exam is null)
+        var access = await LoadAuthorizedAsync(examId, userId, role, ct);
+        if (access.AccessDenied)
+            return Result<ExamSessionResponse>.Failure(ErrorCode.Forbidden, "exams.forbidden");
+        if (access.Exam is null)
             return Result<ExamSessionResponse>.Failure(ErrorCode.NotFound, "exams.not_found");
+
+        var exam = access.Exam;
         if (exam.Status != ExamStatuses.InProgress)
             return Result<ExamSessionResponse>.Failure(ErrorCode.Conflict, "exams.not_in_progress");
         if (IsTimeExpired(exam))
@@ -148,9 +160,13 @@ public sealed class ExamService : IExamService
     public async Task<Result<SubmitExamResponse>> SubmitAsync(
         string examId, string userId, string role, SubmitExamRequest? request, CancellationToken ct = default)
     {
-        var exam = await LoadAuthorizedAsync(examId, userId, role, ct);
-        if (exam is null)
+        var access = await LoadAuthorizedAsync(examId, userId, role, ct);
+        if (access.AccessDenied)
+            return Result<SubmitExamResponse>.Failure(ErrorCode.Forbidden, "exams.forbidden");
+        if (access.Exam is null)
             return Result<SubmitExamResponse>.Failure(ErrorCode.NotFound, "exams.not_found");
+
+        var exam = access.Exam;
         if (exam.Status != ExamStatuses.InProgress)
             return Result<SubmitExamResponse>.Failure(ErrorCode.Conflict, "exams.already_submitted");
 
@@ -175,9 +191,13 @@ public sealed class ExamService : IExamService
     public async Task<Result<GradeExamResponse>> GradeAsync(
         string examId, string userId, string role, GradeExamRequest request, CancellationToken ct = default)
     {
-        var exam = await LoadAuthorizedAsync(examId, userId, role, ct);
-        if (exam is null)
+        var access = await LoadAuthorizedAsync(examId, userId, role, ct);
+        if (access.AccessDenied)
+            return Result<GradeExamResponse>.Failure(ErrorCode.Forbidden, "exams.forbidden");
+        if (access.Exam is null)
             return Result<GradeExamResponse>.Failure(ErrorCode.NotFound, "exams.not_found");
+
+        var exam = access.Exam;
         if (exam.Status == ExamStatuses.InProgress)
             return Result<GradeExamResponse>.Failure(ErrorCode.Conflict, "exams.still_in_progress");
         if (exam.IsFullyGraded && exam.Status == ExamStatuses.Graded)
@@ -213,17 +233,22 @@ public sealed class ExamService : IExamService
             exam.Id, exam.Status, exam.TotalScore, exam.IsFullyGraded));
     }
 
-    private async Task<Exam?> LoadAuthorizedAsync(string examId, string userId, string role, CancellationToken ct)
-    {
-        if (string.IsNullOrWhiteSpace(examId)) return null;
-        var exam = await _exams.GetByIdAsync(examId, ct);
-        if (exam is null) return null;
-        if (!CanAccess(exam, userId, role)) return null;
-        return exam;
-    }
+    private sealed record ExamAccessResult(Exam? Exam, bool AccessDenied);
 
-    private static bool CanAccess(Exam exam, string userId, string role) =>
-        role == UserRoles.SuperAdmin || exam.ConductedBy == userId;
+    private async Task<ExamAccessResult> LoadAuthorizedAsync(string examId, string userId, string role, CancellationToken ct)
+    {
+        if (string.IsNullOrWhiteSpace(examId))
+            return new ExamAccessResult(null, false);
+
+        var exam = await _exams.GetByIdAsync(examId, ct);
+        if (exam is null)
+            return new ExamAccessResult(null, false);
+
+        if (!UserIdentity.CanAccessExam(userId, role, exam.ConductedBy))
+            return new ExamAccessResult(null, true);
+
+        return new ExamAccessResult(exam, false);
+    }
 
     private static bool IsTimeExpired(Exam exam)
     {
