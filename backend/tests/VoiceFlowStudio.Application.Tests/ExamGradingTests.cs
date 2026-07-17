@@ -42,6 +42,75 @@ public class ExamGradingTests
     }
 
     [Fact]
+    public void GradeAutoQuestion_TrueFalseWrong_ReturnsZero()
+    {
+        var q = TrueFalse("tf1", 8, true);
+        var answer = new ExamAnswer { QuestionId = "tf1", TrueFalseAnswer = false };
+        Assert.Equal(0, ExamGrading.GradeAutoQuestion(q, answer));
+    }
+
+    [Fact]
+    public void GradeAutoQuestion_NullAnswer_ReturnsZero()
+    {
+        var q = Mcq("q1", 10, "c1");
+        Assert.Equal(0, ExamGrading.GradeAutoQuestion(q, null));
+    }
+
+    [Fact]
+    public void IsAutoAnswerCorrect_Mcq_ReturnsExpected()
+    {
+        var q = Mcq("q1", 10, "c1");
+        Assert.True(ExamGrading.IsAutoAnswerCorrect(q, new ExamAnswer { SelectedChoiceId = "c1" }));
+        Assert.False(ExamGrading.IsAutoAnswerCorrect(q, new ExamAnswer { SelectedChoiceId = "wrong" }));
+    }
+
+    [Fact]
+    public void ApplyEssayScores_ClampsScoreToMaxPoints()
+    {
+        var exam = new Exam
+        {
+            QuestionsSnapshot = [new ExamQuestionSnapshot { Id = "e1", Type = QuestionTypes.Essay, Text = "Essay", Points = 10 }],
+            Scores = [],
+        };
+
+        ExamGrading.ApplyEssayScores(exam, [("e1", 99)], finalize: false);
+
+        Assert.Equal(10, ExamGrading.GetEarnedPoints(exam, "e1"));
+    }
+
+    [Fact]
+    public void ApplyEssayScores_WithoutFinalize_DoesNotMarkGraded()
+    {
+        var exam = new Exam
+        {
+            Status = ExamStatuses.Submitted,
+            QuestionsSnapshot = [new ExamQuestionSnapshot { Id = "e1", Type = QuestionTypes.Essay, Text = "Essay", Points = 10 }],
+            Scores = [],
+        };
+
+        ExamGrading.ApplyEssayScores(exam, [("e1", 7)], finalize: false);
+
+        Assert.Equal(ExamStatuses.Submitted, exam.Status);
+        Assert.False(exam.IsFullyGraded);
+        Assert.Null(exam.TotalScore);
+    }
+
+    [Fact]
+    public void FormatCandidateAnswer_Mcq_ShowsChoiceText()
+    {
+        var q = Mcq("q1", 5, "c1");
+        var text = ExamGrading.FormatCandidateAnswer(q, new ExamAnswer { SelectedChoiceId = "c1" });
+        Assert.Equal("Correct", text);
+    }
+
+    [Fact]
+    public void FormatCorrectAnswer_TrueFalse_ShowsLabel()
+    {
+        var q = TrueFalse("tf1", 5, true);
+        Assert.Equal("True", ExamGrading.FormatCorrectAnswer(q));
+    }
+
+    [Fact]
     public void ApplyAutoGrading_NoEssays_SetsGradedAndTotalScore()
     {
         var exam = new Exam

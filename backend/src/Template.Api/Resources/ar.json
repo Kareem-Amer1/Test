@@ -21,5 +21,16 @@
   "positions.has_exams": "لا يمكن حذف وظيفة مرتبطة بامتحانات.",
   "exams.not_found": "الامتحان غير موجود.",
   "exams.forbidden": "ليس لديك صلاحية الوصول إلى هذا الامتحان.",
-  "exams.still_in_progress": "هذا الامتحان لا يزال قيد التنفيذ."
+  "exams.still_in_progress": "هذا الامتحان لا يزال قيد التنفيذ.",
+  "exams.candidate_name_required": "اسم المرشح مطلوب.",
+  "exams.template_empty": "لا توجد أسئلة في قالب هذه الوظيفة.",
+  "exams.not_in_progress": "هذا الامتحان ليس قيد التنفيذ.",
+  "exams.time_expired": "انتهى وقت الامتحان.",
+  "exams.answers_required": "مطلوب إجابة واحدة على الأقل.",
+  "exams.already_submitted": "تم تسليم هذا الامتحان مسبقاً.",
+  "exams.already_graded": "تم تصحيح هذا الامتحان بالكامل.",
+  "exams.essay_scores_required": "درجات المقالات مطلوبة.",
+  "exams.invalid_essay_question": "سؤال مقالي غير صالح.",
+  "exams.invalid_essay_score": "درجة المقال خارج النطاق.",
+  "exams.essays_not_all_graded": "لم يتم تصحيح جميع أسئلة المقالات."
 }

@@ -13,6 +13,10 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Template.Core", "..\Templat
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Template.Infrastructure", "..\Template.Infrastructure\Template.Infrastructure.csproj", "{78FA4279-B77B-46A4-991D-3762248EB2F5}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HireExam.Application.Tests", "..\..\tests\VoiceFlowStudio.Application.Tests\VoiceFlowStudio.Application.Tests.csproj", "{C1A8E5F2-9B3D-4E1A-8F6C-2D4E8A9B1C03}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HireExam.Api.IntegrationTests", "..\..\tests\HireExam.Api.IntegrationTests\HireExam.Api.IntegrationTests.csproj", "{D2B9F6A3-0C4E-5F2B-9A7D-3E5F9B0C2D14}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -39,6 +43,14 @@ Global
 		{78FA4279-B77B-46A4-991D-3762248EB2F5}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{78FA4279-B77B-46A4-991D-3762248EB2F5}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{78FA4279-B77B-46A4-991D-3762248EB2F5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C1A8E5F2-9B3D-4E1A-8F6C-2D4E8A9B1C03}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C1A8E5F2-9B3D-4E1A-8F6C-2D4E8A9B1C03}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C1A8E5F2-9B3D-4E1A-8F6C-2D4E8A9B1C03}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C1A8E5F2-9B3D-4E1A-8F6C-2D4E8A9B1C03}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D2B9F6A3-0C4E-5F2B-9A7D-3E5F9B0C2D14}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D2B9F6A3-0C4E-5F2B-9A7D-3E5F9B0C2D14}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D2B9F6A3-0C4E-5F2B-9A7D-3E5F9B0C2D14}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D2B9F6A3-0C4E-5F2B-9A7D-3E5F9B0C2D14}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

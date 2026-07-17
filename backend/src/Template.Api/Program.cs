@@ -142,20 +142,23 @@ builder.Services.AddHttpClient("default")
 var app = builder.Build();
 
 // Ensure Mongo indexes at boot (single-document writes, idempotent).
-using (var scope = app.Services.CreateScope())
+if (!app.Environment.IsEnvironment("Testing"))
 {
-    var factory = scope.ServiceProvider.GetRequiredService<IMongoClientFactory>();
-    try { await CollectionBootstrap.EnsureIndexesAsync(factory); }
-    catch (Exception ex)
+    using (var scope = app.Services.CreateScope())
     {
-        app.Logger.LogWarning(ex, "Mongo index initialisation failed (continuing).");
-    }
+        var factory = scope.ServiceProvider.GetRequiredService<IMongoClientFactory>();
+        try { await CollectionBootstrap.EnsureIndexesAsync(factory); }
+        catch (Exception ex)
+        {
+            app.Logger.LogWarning(ex, "Mongo index initialisation failed (continuing).");
+        }
 
-    var seed = scope.ServiceProvider.GetRequiredService<ISeedService>();
-    try { await seed.SeedAllAsync(); }
-    catch (Exception ex)
-    {
-        app.Logger.LogWarning(ex, "Database seed failed (continuing).");
+        var seed = scope.ServiceProvider.GetRequiredService<ISeedService>();
+        try { await seed.SeedAllAsync(); }
+        catch (Exception ex)
+        {
+            app.Logger.LogWarning(ex, "Database seed failed (continuing).");
+        }
     }
 }
 

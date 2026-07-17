@@ -21,5 +21,16 @@
   "positions.has_exams": "Cannot delete a position that has exams.",
   "exams.not_found": "Exam not found.",
   "exams.forbidden": "You do not have access to this exam.",
-  "exams.still_in_progress": "This exam is still in progress."
+  "exams.still_in_progress": "This exam is still in progress.",
+  "exams.candidate_name_required": "Candidate name is required.",
+  "exams.template_empty": "This position has no questions in its template.",
+  "exams.not_in_progress": "This exam is not in progress.",
+  "exams.time_expired": "Exam time has expired.",
+  "exams.answers_required": "At least one answer is required.",
+  "exams.already_submitted": "This exam was already submitted.",
+  "exams.already_graded": "This exam is already fully graded.",
+  "exams.essay_scores_required": "Essay scores are required.",
+  "exams.invalid_essay_question": "Invalid essay question.",
+  "exams.invalid_essay_score": "Essay score is out of range.",
+  "exams.essays_not_all_graded": "Not all essay questions have been graded."
 }
