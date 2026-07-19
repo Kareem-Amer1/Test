@@ -35,11 +35,6 @@ public sealed class ExamsController : ControllerBase
         return (await _exams.ListAsync(User.GetUserId(), User.GetRole(), query, ct)).ToActionResult(_loc);
     }
 
-    [HttpPost]
-    [ProducesResponseType(typeof(ApiResponse<CreateExamResponse>), StatusCodes.Status200OK)]
-    public async Task<IActionResult> Create([FromBody] CreateExamRequest request, CancellationToken ct)
-        => (await _exams.CreateAsync(User.GetUserId(), request, ct)).ToActionResult(_loc);
-
     [HttpGet("{id}")]
     [ProducesResponseType(typeof(ApiResponse<ExamDetailResponse>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetDetail(string id, CancellationToken ct)

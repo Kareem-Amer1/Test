@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Link, Navigate, useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -56,19 +56,18 @@ export default function ExamDetailPage() {
     return <p className="text-sm text-muted-foreground">{t("common.loading", "Loading…")}</p>;
   }
 
-  const apiError = error as (Error & { code?: string; status?: number }) | undefined;
-  if (apiError?.code === "exams.still_in_progress" || apiError?.status === 409) {
-    return <Navigate to={`/exams/${examId}/session`} replace />;
-  }
-
   if (isError || !exam) {
+    const apiError = error as (Error & { code?: string; status?: number }) | undefined;
     const forbidden = apiError?.code === "exams.forbidden" || apiError?.status === 403;
+    const inProgress = apiError?.code === "exams.still_in_progress" || apiError?.status === 409;
     return (
       <div className="space-y-2">
         <p className="text-sm text-destructive">
           {forbidden
             ? t("exams.forbidden", "You do not have access to this exam.")
-            : t("exams.detailError", "Failed to load exam.")}
+            : inProgress
+              ? t("exams.candidateInProgress", "This exam is still in progress. The candidate takes it via their invitation link.")
+              : t("exams.detailError", "Failed to load exam.")}
         </p>
         <Button variant="outline" size="sm" onClick={() => refetch()}>{t("common.retry", "Retry")}</Button>
       </div>
@@ -88,6 +87,11 @@ export default function ExamDetailPage() {
           <div>
             <h1 className="text-2xl font-semibold">{exam.candidateName}</h1>
             <p className="text-sm text-muted-foreground">{exam.positionName}</p>
+            {(exam.candidateEmail || exam.candidateMobile) && (
+              <p className="text-xs text-muted-foreground mt-1">
+                {[exam.candidateEmail, exam.candidateMobile].filter(Boolean).join(" · ")}
+              </p>
+            )}
             <p className="text-xs text-muted-foreground mt-1">
               {t("exams.conductedBy", "Conducted by")}: {exam.conductedByName}
             </p>

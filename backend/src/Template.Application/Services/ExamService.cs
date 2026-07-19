@@ -9,7 +9,6 @@ public interface IExamService
 {
     Task<Result<IReadOnlyList<ExamListItemDto>>> ListAsync(
         string userId, string role, ExamListQueryDto? query, CancellationToken ct = default);
-    Task<Result<CreateExamResponse>> CreateAsync(string userId, CreateExamRequest request, CancellationToken ct = default);
     Task<Result<ExamSessionResponse>> GetSessionAsync(string examId, string userId, string role, CancellationToken ct = default);
     Task<Result<ExamDetailResponse>> GetDetailAsync(string examId, string userId, string role, CancellationToken ct = default);
     Task<Result<ExamSessionResponse>> SaveAnswersAsync(string examId, string userId, string role, SaveAnswersRequest request, CancellationToken ct = default);
@@ -20,20 +19,10 @@ public interface IExamService
 public sealed class ExamService : IExamService
 {
     private readonly IExamRepository _exams;
-    private readonly IPositionRepository _positions;
-    private readonly IExamTemplateRepository _templates;
-    private readonly IUserRepository _users;
 
-    public ExamService(
-        IExamRepository exams,
-        IPositionRepository positions,
-        IExamTemplateRepository templates,
-        IUserRepository users)
+    public ExamService(IExamRepository exams)
     {
         _exams = exams;
-        _positions = positions;
-        _templates = templates;
-        _users = users;
     }
 
     public async Task<Result<IReadOnlyList<ExamListItemDto>>> ListAsync(
@@ -52,65 +41,6 @@ public sealed class ExamService : IExamService
         var exams = await _exams.ListAsync(filter, ct);
         var items = exams.Select(MapListItem).ToList();
         return Result<IReadOnlyList<ExamListItemDto>>.Success(items);
-    }
-
-    public async Task<Result<CreateExamResponse>> CreateAsync(string userId, CreateExamRequest request, CancellationToken ct = default)
-    {
-        if (string.IsNullOrWhiteSpace(userId))
-            return Result<CreateExamResponse>.Failure(ErrorCode.Unauthorized, "auth.unauthorized");
-
-        var candidateName = request.CandidateName?.Trim() ?? string.Empty;
-        if (candidateName.Length < 2)
-            return Result<CreateExamResponse>.Failure(ErrorCode.Validation, "exams.candidate_name_required");
-
-        var position = await _positions.GetByIdAsync(request.PositionId, ct);
-        if (position is null)
-            return Result<CreateExamResponse>.Failure(ErrorCode.NotFound, "positions.not_found");
-
-        var template = await _templates.GetByPositionIdAsync(request.PositionId, ct);
-        if (template is null)
-            return Result<CreateExamResponse>.Failure(ErrorCode.Validation, "exams.template_empty");
-
-        TemplateStructure.EnsurePartitions(template);
-        if (!TemplateStructure.HasQuestions(template))
-            return Result<CreateExamResponse>.Failure(ErrorCode.Validation, "exams.template_empty");
-
-        var user = await _users.GetByIdAsync(userId, ct);
-        var snapshot = TemplateStructure.EnumerateQuestions(template)
-            .Select(pair => new ExamQuestionSnapshot
-            {
-                Id = pair.Question.Id,
-                Type = pair.Question.Type,
-                Text = pair.Question.Text,
-                Points = pair.Question.Points,
-                Choices = pair.Question.Choices?.Select(c => new McqChoice { Id = c.Id, Text = c.Text }).ToList(),
-                CorrectAnswer = pair.Question.CorrectAnswer,
-                CorrectChoiceId = pair.Question.CorrectChoiceId,
-                PartitionId = pair.Partition.Id,
-                PartitionName = pair.Partition.Name,
-            })
-            .ToList();
-
-        var exam = new Exam
-        {
-            CandidateName = candidateName,
-            PositionId = position.Id,
-            PositionName = position.Name,
-            ConductedBy = userId,
-            ConductedByName = user?.FullName ?? user?.Email ?? "HR",
-            DurationMinutes = template.DurationMinutes,
-            StartedAt = DateTime.UtcNow,
-            Status = ExamStatuses.InProgress,
-            QuestionsSnapshot = snapshot,
-            Answers = snapshot.Select(q => new ExamAnswer { QuestionId = q.Id }).ToList(),
-            MaxScore = snapshot.Sum(q => q.Points),
-            AutoGradedScore = 0,
-            IsFullyGraded = false,
-        };
-
-        await _exams.InsertAsync(exam, ct);
-        return Result<CreateExamResponse>.Success(new CreateExamResponse(
-            exam.Id, exam.CandidateName, exam.PositionName, exam.Status));
     }
 
     public async Task<Result<ExamSessionResponse>> GetSessionAsync(string examId, string userId, string role, CancellationToken ct = default)
@@ -149,7 +79,8 @@ public sealed class ExamService : IExamService
         var exam = access.Exam;
         if (exam.Status != ExamStatuses.InProgress)
             return Result<ExamSessionResponse>.Failure(ErrorCode.Conflict, "exams.not_in_progress");
-        if (IsTimeExpired(exam))
+        ExamTimer.ApplyElapsed(exam, request.ElapsedSeconds);
+        if (ExamTimer.IsExpired(exam))
             return Result<ExamSessionResponse>.Failure(ErrorCode.Conflict, "exams.time_expired");
 
         if (request.Answers is null || request.Answers.Count == 0)
@@ -178,7 +109,10 @@ public sealed class ExamService : IExamService
         if (request?.Answers is { Count: > 0 })
             MergeAnswers(exam, request.Answers);
 
+        ExamTimer.ApplyElapsed(exam, request?.ElapsedSeconds);
+
         exam.SubmittedAt = DateTime.UtcNow;
+        exam.ElapsedSeconds = Math.Min(exam.ElapsedSeconds, ExamTimer.TotalSeconds(exam));
         ExamGrading.ApplyAutoGrading(exam);
 
         if (!await _exams.ReplaceAsync(exam, ct))
@@ -255,12 +189,6 @@ public sealed class ExamService : IExamService
         return new ExamAccessResult(exam, false);
     }
 
-    private static bool IsTimeExpired(Exam exam)
-    {
-        var end = exam.StartedAt.AddMinutes(exam.DurationMinutes);
-        return DateTime.UtcNow > end;
-    }
-
     private static void MergeAnswers(Exam exam, IReadOnlyList<ExamAnswerInputDto> incoming)
     {
         var lookup = exam.Answers.ToDictionary(a => a.QuestionId);
@@ -277,6 +205,7 @@ public sealed class ExamService : IExamService
     private static ExamListItemDto MapListItem(Exam exam) => new(
         exam.Id,
         exam.CandidateName,
+        exam.CandidateEmail,
         exam.PositionName,
         exam.PositionId,
         exam.Status,
@@ -313,6 +242,8 @@ public sealed class ExamService : IExamService
             exam.CandidateName,
             exam.PositionName,
             exam.DurationMinutes,
+            exam.ElapsedSeconds,
+            ExamTimer.RemainingSeconds(exam),
             exam.StartedAt,
             exam.Status,
             questions,
@@ -348,6 +279,8 @@ public sealed class ExamService : IExamService
         return new ExamDetailResponse(
             exam.Id,
             exam.CandidateName,
+            exam.CandidateEmail,
+            exam.CandidateMobile,
             exam.PositionName,
             exam.Status,
             exam.StartedAt,

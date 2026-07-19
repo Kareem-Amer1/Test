@@ -41,6 +41,8 @@ export interface ExamSession {
   candidateName: string;
   positionName: string;
   durationMinutes: number;
+  elapsedSeconds: number;
+  remainingSeconds: number;
   startedAt: string;
   status: ExamStatus;
   questions: ExamSessionQuestion[];
@@ -59,6 +61,7 @@ export interface SubmitExamResult {
 export interface ExamListItem {
   id: string;
   candidateName: string;
+  candidateEmail: string;
   positionName: string;
   positionId: string;
   status: ExamStatus;
@@ -98,6 +101,8 @@ export interface ExamAnswerReview {
 export interface ExamDetail {
   id: string;
   candidateName: string;
+  candidateEmail: string;
+  candidateMobile: string;
   positionName: string;
   status: ExamStatus;
   startedAt: string;

@@ -22,13 +22,14 @@ public sealed record ExamAnswerInputDto(
     bool? TrueFalseAnswer,
     string? SelectedChoiceId);
 
-public sealed record SaveAnswersRequest(IReadOnlyList<ExamAnswerInputDto> Answers);
+public sealed record SaveAnswersRequest(IReadOnlyList<ExamAnswerInputDto> Answers, int? ElapsedSeconds = null);
 
-public sealed record SubmitExamRequest(IReadOnlyList<ExamAnswerInputDto>? Answers);
+public sealed record SubmitExamRequest(IReadOnlyList<ExamAnswerInputDto>? Answers, int? ElapsedSeconds = null);
 
 public sealed record ExamListItemDto(
     string Id,
     string CandidateName,
+    string CandidateEmail,
     string PositionName,
     string PositionId,
     string Status,
@@ -60,6 +61,8 @@ public sealed record ExamAnswerReviewDto(
 public sealed record ExamDetailResponse(
     string Id,
     string CandidateName,
+    string CandidateEmail,
+    string CandidateMobile,
     string PositionName,
     string Status,
     DateTime StartedAt,
@@ -86,6 +89,8 @@ public sealed record ExamSessionResponse(
     string CandidateName,
     string PositionName,
     int DurationMinutes,
+    int ElapsedSeconds,
+    int RemainingSeconds,
     DateTime StartedAt,
     string Status,
     IReadOnlyList<ExamSessionQuestionDto> Questions,

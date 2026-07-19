@@ -70,6 +70,16 @@ public sealed class Exam : Entity
     [BsonElement("candidateName")]
     public string CandidateName { get; set; } = string.Empty;
 
+    [BsonElement("candidateEmail")]
+    public string CandidateEmail { get; set; } = string.Empty;
+
+    [BsonElement("candidateMobile")]
+    public string CandidateMobile { get; set; } = string.Empty;
+
+    [BsonElement("invitationId")]
+    [BsonRepresentation(BsonType.ObjectId)]
+    public string? InvitationId { get; set; }
+
     [BsonElement("positionId")]
     [BsonRepresentation(BsonType.ObjectId)]
     public string PositionId { get; set; } = string.Empty;
@@ -86,6 +96,10 @@ public sealed class Exam : Entity
 
     [BsonElement("durationMinutes")]
     public int DurationMinutes { get; set; }
+
+    /// <summary>Active exam time consumed (pauses when candidate disconnects).</summary>
+    [BsonElement("elapsedSeconds")]
+    public int ElapsedSeconds { get; set; }
 
     [BsonElement("startedAt")]
     public DateTime StartedAt { get; set; }

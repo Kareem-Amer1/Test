@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { Briefcase, Pencil, Play, Trash2 } from "lucide-react";
+import { Briefcase, Link2, Pencil, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -15,17 +15,16 @@ import { useAuth } from "@/hooks/useAuth";
 import { useDeletePosition, usePositions } from "../usePositions";
 import type { Position } from "../positions.types";
 import { CreatePositionDialog } from "./CreatePositionDialog";
-import { StartExamDialog } from "@/features/exams/components/StartExamDialog";
+import { CreateInvitationDialog } from "@/features/invitations/components/CreateInvitationDialog";
 import { toast } from "sonner";
 
 export default function PositionsTable() {
   const { t } = useTranslation();
-  const navigate = useNavigate();
   const { isSuperAdmin } = useAuth();
   const { data, isLoading, isError, refetch } = usePositions();
   const deletePosition = useDeletePosition();
   const [createOpen, setCreateOpen] = useState(false);
-  const [startExamPosition, setStartExamPosition] = useState<Position | null>(null);
+  const [invitePosition, setInvitePosition] = useState<Position | null>(null);
 
   const onDelete = async (position: Position) => {
     if (!window.confirm(t("positions.confirmDelete", "Delete position \"{{name}}\"?", { name: position.name })))
@@ -83,9 +82,9 @@ export default function PositionsTable() {
                   <TableCell className="font-medium">{p.name}</TableCell>
                   <TableCell className="text-muted-foreground">{p.description ?? "—"}</TableCell>
                   <TableCell className="text-end space-x-2">
-                    <Button variant="default" size="sm" onClick={() => setStartExamPosition(p)}>
-                      <Play className="h-4 w-4 me-1" />
-                      {t("exams.start", "Start exam")}
+                    <Button variant="default" size="sm" onClick={() => setInvitePosition(p)}>
+                      <Link2 className="h-4 w-4 me-1" />
+                      {t("invitations.createLink", "Create link")}
                     </Button>
                     <Button variant="outline" size="sm" asChild>
                       <Link to={`/positions/${p.id}/template`}>
@@ -113,11 +112,10 @@ export default function PositionsTable() {
       )}
 
       <CreatePositionDialog open={createOpen} onOpenChange={setCreateOpen} />
-      <StartExamDialog
-        position={startExamPosition}
-        open={!!startExamPosition}
-        onOpenChange={(open) => { if (!open) setStartExamPosition(null); }}
-        onCreated={(examId) => navigate(`/exams/${examId}/session`)}
+      <CreateInvitationDialog
+        position={invitePosition}
+        open={!!invitePosition}
+        onOpenChange={(open) => { if (!open) setInvitePosition(null); }}
       />
     </div>
   );

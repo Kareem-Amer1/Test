@@ -43,3 +43,20 @@ public static class ExamIndexes
             col.Indexes.CreateOneAsync(conductorIdx, cancellationToken: ct));
     }
 }
+
+public static class ExamInvitationIndexes
+{
+    public static Task EnsureAsync(IMongoDatabase db, CancellationToken ct = default)
+    {
+        var col = db.GetCollection<ExamInvitation>("exam_invitations");
+        var tokenIdx = new CreateIndexModel<ExamInvitation>(
+            Builders<ExamInvitation>.IndexKeys.Ascending(i => i.Token),
+            new CreateIndexOptions { Name = "ix_exam_invitations_token", Unique = true });
+        var creatorIdx = new CreateIndexModel<ExamInvitation>(
+            Builders<ExamInvitation>.IndexKeys.Ascending(i => i.CreatedBy),
+            new CreateIndexOptions { Name = "ix_exam_invitations_createdBy" });
+        return Task.WhenAll(
+            col.Indexes.CreateOneAsync(tokenIdx, cancellationToken: ct),
+            col.Indexes.CreateOneAsync(creatorIdx, cancellationToken: ct));
+    }
+}

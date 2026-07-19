@@ -28,12 +28,15 @@ public static class InfrastructureRegistration
         services.AddScoped<IPositionRepository, PositionRepository>();
         services.AddScoped<IExamTemplateRepository, ExamTemplateRepository>();
         services.AddScoped<IExamRepository, ExamRepository>();
+        services.AddScoped<IExamInvitationRepository, ExamInvitationRepository>();
 
         services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<IUserService, UserService>();
         services.AddScoped<IPositionService, PositionService>();
         services.AddScoped<ITemplateService, TemplateService>();
         services.AddScoped<IExamService, ExamService>();
+        services.AddScoped<IInvitationService, InvitationService>();
+        services.AddScoped<ICandidateExamService, CandidateExamService>();
         services.AddScoped<IDashboardService, DashboardService>();
         services.AddScoped<ISeedService, SeedService>();
 

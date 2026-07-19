@@ -30,10 +30,10 @@ export const examsApi = {
   create: (dto: CreateExamDto) => api.post<CreateExamResult>("/exams", dto),
   getDetail: (id: string) => api.get<ExamDetail>(`/exams/${id}`),
   getSession: (id: string) => api.get<ExamSession>(`/exams/${id}/session`),
-  saveAnswers: (id: string, answers: ExamAnswerInput[]) =>
-    api.put<ExamSession>(`/exams/${id}/answers`, { answers }),
-  submit: (id: string, answers: ExamAnswerInput[]) =>
-    api.post<SubmitExamResult>(`/exams/${id}/submit`, { answers }),
+  saveAnswers: (id: string, answers: ExamAnswerInput[], elapsedSeconds?: number) =>
+    api.put<ExamSession>(`/exams/${id}/answers`, { answers, elapsedSeconds }),
+  submit: (id: string, answers: ExamAnswerInput[], elapsedSeconds?: number) =>
+    api.post<SubmitExamResult>(`/exams/${id}/submit`, { answers, elapsedSeconds }),
   grade: (id: string, dto: GradeExamDto) =>
     api.put<GradeExamResult>(`/exams/${id}/grade`, dto),
 };

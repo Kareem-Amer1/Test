@@ -86,7 +86,11 @@ public sealed class ExamRepository : IExamRepository
         if (!string.IsNullOrWhiteSpace(filter.Search))
         {
             var escaped = Regex.Escape(filter.Search.Trim());
-            filters.Add(builder.Regex(e => e.CandidateName, new BsonRegularExpression(escaped, "i")));
+            var regex = new BsonRegularExpression(escaped, "i");
+            filters.Add(builder.Or(
+                builder.Regex(e => e.CandidateName, regex),
+                builder.Regex(e => e.CandidateEmail, regex),
+                builder.Regex(e => e.CandidateMobile, regex)));
         }
         if (filter.PendingGradingOnly)
         {

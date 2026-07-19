@@ -13,7 +13,7 @@ import Dashboard from "./pages/Dashboard";
 import UsersAdmin from "./pages/UsersAdmin";
 import PositionsPage from "./features/positions/PositionsPage";
 import TemplateEditorPage from "./features/positions/TemplateEditorPage";
-import ExamSessionPage from "./features/exams/ExamSessionPage";
+import CandidateInvitePage from "./features/candidate/CandidateInvitePage";
 import ExamDetailPage from "./features/exams/ExamDetailPage";
 import ExamsPage from "./features/exams/ExamsPage";
 import ProfilePage from "./features/profile/ProfilePage";
@@ -26,10 +26,10 @@ const queryClient = new QueryClient();
 const router = createBrowserRouter([
   { path: "/", element: <Navigate to={POST_LOGIN_ROUTE} replace /> },
   { path: "/auth", element: <Auth /> },
+  { path: "/invite/:token", element: <CandidateInvitePage /> },
   {
     element: <ProtectedRoute />,
     children: [
-      { path: "/exams/:examId/session", element: <ExamSessionPage /> },
       {
         element: <AppShell />,
         children: [

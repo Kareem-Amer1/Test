@@ -16,16 +16,7 @@ public class ExamServiceTests
     private static (ExamService svc, Mock<IExamRepository> exams) Build()
     {
         var exams = new Mock<IExamRepository>();
-        var positions = new Mock<IPositionRepository>();
-        var templates = new Mock<IExamTemplateRepository>();
-        var users = new Mock<IUserRepository>();
-
-        var svc = new ExamService(
-            exams.Object,
-            positions.Object,
-            templates.Object,
-            users.Object);
-
+        var svc = new ExamService(exams.Object);
         return (svc, exams);
     }
 
@@ -161,8 +152,8 @@ public class ExamServiceTests
     {
         var (svc, exams) = Build();
         var exam = SampleExam(Hr1, ExamStatuses.InProgress);
-        exam.StartedAt = DateTime.UtcNow.AddHours(-2);
         exam.DurationMinutes = 30;
+        exam.ElapsedSeconds = 30 * 60;
         exams.Setup(e => e.GetByIdAsync(exam.Id, default)).ReturnsAsync(exam);
 
         var result = await svc.SaveAnswersAsync(
@@ -195,16 +186,5 @@ public class ExamServiceTests
         Assert.False(result.IsSuccess);
         Assert.Equal(ErrorCode.Conflict, result.Error.Code);
         Assert.Equal("exams.already_graded", result.Error.Message);
-    }
-
-    [Fact]
-    public async Task CreateAsync_EmptyUserId_ReturnsUnauthorized()
-    {
-        var (svc, _) = Build();
-
-        var result = await svc.CreateAsync("", new CreateExamRequest("pos", "Candidate"));
-
-        Assert.False(result.IsSuccess);
-        Assert.Equal(ErrorCode.Unauthorized, result.Error.Code);
     }
 }
